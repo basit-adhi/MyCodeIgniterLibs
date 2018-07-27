@@ -2,13 +2,15 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Database Result Dropdown Class
- *
- * This is a DB_result converter to an associative array of options to be listed at form_dropdown() 
- * Example is in the end of this class
+ * DropdownHelper.php
+ * <br />Database Result Dropdown Class
+ * <br />
+ * <br />This is a DB_result converter to an associative array of options to be listed at form_dropdown() 
+ * <br />Example is in the end of this class
  * 
- * @author		Basit Adhi Prabowo
- * @link		https://codeigniter.com/user_guide/database/
+ * @author Basit Adhi Prabowo, S.T. <basit@unisayogya.ac.id>
+ * @access public
+ * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/DropdownHelper.php
  */
 class DropdownHelper
 {
