@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * DropdownHelper.php
+ * DropdownHelperBAP.php
  * <br />Database Result Dropdown Class
  * <br />
  * <br />This is a DB_result converter to an associative array of options to be listed at form_dropdown() 
@@ -10,10 +10,26 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * 
  * @author Basit Adhi Prabowo, S.T. <basit@unisayogya.ac.id>
  * @access public
- * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/DropdownHelper.php
+ * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/DropdownHelperBAP.php
  */
-class DropdownHelper
+class DropdownHelperBAP
 {
+    /**
+     *
+     * @var CI super-object
+     */
+    protected $CI;
+
+    // We'll use a constructor, as you can't directly call a function
+    // from a property definition.
+    function __construct()
+    {
+        // Assign the CodeIgniter super-object
+        $this->CI =& get_instance();
+        //--
+        $this->CI->load->library('EncryptBAP');
+    }
+    
     /**
      * Query result to "dropdown"-data.
      * @param   array   $data       data from database result
@@ -41,12 +57,16 @@ class DropdownHelper
      * @param	string	$labelfield field name using as label in the dropdown
      * @return	array
      */
-    function result_dropdown_json($data, $labelfield)
+    function result_dropdown_json($name, $data, $labelfield)
     {
             $returned_array = array();
             foreach ($data as $row)
             {
-                $returned_array[htmlentities(json_encode($row))] = $row[$labelfield];
+                //bugs, somehow json_encode and openssl_encrypt cannot decode properly (in CI?)
+                //we need add some string, that is for: {"firstkey 
+                //from: {"firstkey":0,"secondkey":1}
+                $bugsfix = str_repeat("_", strlen(key($row)) + 2);
+                $returned_array[$this->CI->encryptbap->encrypt($name, $bugsfix.json_encode($row))] = $row[$labelfield];
             }
 
             return $returned_array;
@@ -58,9 +78,9 @@ class DropdownHelper
      * @param string $postdata  string from POST Method
      * @return array
      */
-    function result_dropdown_json_decode($postdata)
+    function result_dropdown_json_decode($name, $postdata)
     {
-        return (array) json_decode(html_entity_decode($postdata));
+        return (array) json_decode(strstr($this->CI->encryptbap->decrypt($name, $postdata), '{'));
     }
 }
 
@@ -72,14 +92,14 @@ Model application/models/Mexample.php
 <?php
 class Mexample extends CI_Model {
 
-    public function getData()
+    public function getData($name)
     {
-        $this->load->library('DropdownHelper');
+        $this->load->library('DropdownHelperBAP');
         $this->db->select('id, comments');
         $this->db->from('example_table');
 
         $query = $this->db->get();
-        return ($query->num_rows()) ? $this->dropdownhelper->result_dropdown_json($query->result('array'), 'comments') : false;
+        return ($query->num_rows()) ? $this->dropdownhelperbap->result_dropdown_json($name, $query->result('array'), 'comments') : false;
     }	
 }
 
@@ -97,13 +117,13 @@ class CSample extends CI_Controller {
 
     function index()
     {
-        $data['dropdownoption'] = $this->MExample->getData();
+        $data['dropdownoption'] = $this->MExample->getData('dropdownname');
         $this->load->view('VTest',$data);
     }
  
     function process()
     {
-        $dropdownname = $this->dropdownhelper->result_dropdown_json_decode($this->input->post('dropdownname'));
+        $dropdownname = $this->dropdownhelperbap->result_dropdown_json_decode('dropdownname', $this->input->post('dropdownname'));
         $id           = $dropdownname['id'];
         $comments     = $dropdownname['comments'];
         redirect('next_page');
