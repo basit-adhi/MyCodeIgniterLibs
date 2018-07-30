@@ -6,6 +6,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * <br />Encrypt Text Class (EncryptBAP) and Encrypt Information Class (KeyBAP)
  * <br />
  * <br />This is an encrypt and decrypt helper
+ * <br /> WARNING!!! There is a problem if you mix this openssl_encrypt with json_encode. Take a look at DropdownHelperBAP.php how to resolve that problem (result_dropdown_json() and result_dropdown_json_decode()).
  * 
  * @author Basit Adhi Prabowo, S.T. <basit@unisayogya.ac.id>
  * @access public
