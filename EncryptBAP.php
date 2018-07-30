@@ -197,3 +197,14 @@ class KeyBAP
         echo "cipher:".$this->cipher."|key:".$this->key."|options:".$this->options."|iv:".$this->iv."|tag:".$this->tag."z";
     }
 }
+/**
+EXAMPLE
+//if you load from application/library
+//$this->CI =& get_instance();
+//$this->CI->load->library('EncryptBAP');
+//$enc = $this->CI->encryptbap->encrypt($name, "sometext");
+//$this->CI->encryptbap->decrypt($name, $enc);
+$this->load->library('EncryptBAP');
+$enc = $this->encryptbap->encrypt($name, "sometext");
+$enc = $this->encryptbap->decrypt($name, $enc);
+ */
