@@ -7,7 +7,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * 
  * @author Basit Adhi Prabowo, S.T. <basit@unisayogya.ac.id>
  * @access public
- * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/helpers/VariableBAP.php
+ * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/helpers/variablebap_helper.php
  */
 
 /**
