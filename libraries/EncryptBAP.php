@@ -6,7 +6,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * <br />Encrypt Text Class (EncryptBAP) and Encrypt Information Class (KeyBAP)
  * <br />
  * <br />This is an encrypt and decrypt helper
- * <br /> WARNING!!! There is a problem if you mix this openssl_encrypt with json_encode. Take a look at DropdownHelperBAP.php how to resolve that problem (result_dropdown_json() and result_dropdown_json_decode()).
  * 
  * @author Basit Adhi Prabowo, S.T. <basit@unisayogya.ac.id>
  * @access public
@@ -69,6 +68,8 @@ class EncryptBAP
         return base64_encode($ciphertext);
     }
     
+    // --------------------------------------------------------------------
+    
     /**
      * Decrypt cipher text, all information loaded from session with given name
      * @param string $name          name of the encryption in session
@@ -93,6 +94,8 @@ class EncryptBAP
         }
     }
     
+    // --------------------------------------------------------------------
+    
     /**
      * Save all information to session
      */
@@ -101,6 +104,8 @@ class EncryptBAP
         $this->key->serialize();
         $this->CI->session->set_userdata("encryptBAPkey".$this->name, $this->key->serialize());
     }
+    
+    // --------------------------------------------------------------------
     
     /**
      * Load all information from session
@@ -132,6 +137,8 @@ class KeyBAP
         $this->tag      = "";
     }
     
+    // --------------------------------------------------------------------
+    
     /**
      * String built from random chars
      * @param int $length   random string length
@@ -149,6 +156,8 @@ class KeyBAP
 	return $str;
     }
     
+    // --------------------------------------------------------------------
+    
     /**
      * Key built from random chars
      * @param int $length   random key length
@@ -157,6 +166,8 @@ class KeyBAP
     {
         $this->key  = $this->randchar($length);
     }
+    
+    // --------------------------------------------------------------------
     
     /**
      * Iv built from random chars
@@ -167,6 +178,8 @@ class KeyBAP
         $this->iv   = $this->randchar($length);
     }
     
+    // --------------------------------------------------------------------
+    
     /**
      * Format information before stored to session
      * @return string   base64 serialize information
@@ -175,6 +188,8 @@ class KeyBAP
     {
         return base64_encode(serialize(array("cipher"=>$this->cipher, "key"=>$this->key, "options"=>$this->options, "iv"=>$this->iv, "tag"=>$this->tag)));
     }
+    
+    // --------------------------------------------------------------------
     
     /**
      * Load information from session
@@ -189,6 +204,8 @@ class KeyBAP
         $this->iv       = $s["iv"];
         $this->tag      = $s["tag"];
     }
+    
+    // --------------------------------------------------------------------
     
     /**
      * Print all information to screen
