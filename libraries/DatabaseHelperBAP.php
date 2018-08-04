@@ -41,6 +41,15 @@ class DatabaseHelperBAP
         $this->tables = new TableStructure();
     }
     
+    /**
+     * Constructor
+     * @param type $tablename   table(s) to select, example1 : "table1", example2: "table1, table2" 
+     */
+    function DatabaseHelperBAP($tablename)
+    {
+        $this->registerTable($tablename);
+    }
+    
     // --------------------------------------------------------------------
     
     /**
@@ -61,6 +70,7 @@ class DatabaseHelperBAP
      */
     function registerTable($tablename)
     {
+        /* if $tablename consist more than 1 table (use comma), then register it 1 by 1 */
         if (strpos($tablename, ",") !== false)
         {
            foreach (explode(",", $tablename) as $singletablename)
@@ -68,6 +78,7 @@ class DatabaseHelperBAP
                $this->registerTable(trim($singletablename));
            }
         }
+        /* register 1 table */
         elseif (!array_key_exists($tablename, $this->tables->name))
         {
             //Customize this conditional switch, change to fit your tables definition
@@ -85,15 +96,20 @@ class DatabaseHelperBAP
     
     /**
      * Adds a SELECT clause to a query, automatically add join, automatically add partition filter
-     * @param type $select  The SELECT portion of a query
+     * @param type $select      The SELECT portion of a query
+     * @param type $fromtable   table(s) to select, example1 : "table1", example2: "table1, table2" 
      */
-    function autoJoin($select)
+    function selectfrom($select, $fromtable)
     {
+        /* convert select to array */
+        $fromtables     = explode(",", $fromtable);
+        /* generate select and from */
         $this->CI->db->select($select);
-        reset($this->tables->name);
-        $this->CI->db->from(implode_2a(",", $this->tables->name, $this->tables->tablealias));
-        foreach ($this->tables->name as $table)
+        $this->CI->db->from(implode_2a(",", $fromtables, select_array_from_values($this->tables->tablealias, $fromtables)));
+        /* try generate join and partition filter */
+        foreach ($fromtables as $table)
         {
+            /* generate join */
             if (!empty($this->tables->onjoin[$table])) 
             {
                 foreach ($this->tables->onjoin[$table] as $tablejoin => $field)
@@ -105,6 +121,7 @@ class DatabaseHelperBAP
                     }
                 }
             }
+            /* generate partition filter */
             if (!empty($this->tables->partitionkey[$table])) 
             {
                 foreach ($this->tables->partitionkey[$table] as $field)
@@ -119,10 +136,11 @@ class DatabaseHelperBAP
     
     /**
      * Adds a SELECT clause to a query, automatically add join, automatically add partition filter, then execute $this->CI->db->get()
-     * @param type $select  The SELECT portion of a query
+     * @param type $select      The SELECT portion of a query
+     * @param type $fromtable   table(s) to select, example1 : "table1", example2: "table1, table2" 
      * @return type CI_DB_result instance (same as $this->CI->db->get())
      */
-    function get_autoJoin($select)
+    function get_selectfrom($select, $fromtable)
     {
         $this->autoJoin($select);
         return $this->get();
@@ -217,30 +235,22 @@ class Mexample extends CI_Model {
     function __construct()
     {
         $this->load->library('DatabaseHelperBAP');
-        $this->tabledef = new DatabaseHelperBAP();
+        $this->tabledef = new DatabaseHelperBAP("ueu_tbl_unit,ueu_tbl_user");
     }
 
     //generate: select * from ueu_tbl_unit tu, ueu_tbl_user tus where tus.id_unit=tu.id_unit and tu.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and tus.tahunanggaran=$this->CI->session->userdata("idtahunanggaran")
     public function getDataSample1($name)
     {
-        $this->tabledef->registerTable("ueu_tbl_unit");
-        $this->tabledef->registerTable("ueu_tbl_user");
-        return $this->tabledef->get_autoJoin("*");
-    }
-
-    //generate: select * from ueu_tbl_unit tu, ueu_tbl_user tus where tus.id_unit=tu.id_unit and tu.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and tus.tahunanggaran=$this->CI->session->userdata("idtahunanggaran")
-    public function getDataSample2($name)
-    {
-        $this->tabledef->registerTable("ueu_tbl_unit,ueu_tbl_user");
-        return $this->tabledef->get_autoJoin("*");
+        $this->tabledef->registerTable();
+        return $this->tabledef->get_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
     }
 
     //generate: select * from ueu_tbl_unit tu, ueu_tbl_user tus where tus.id_unit=tu.id_unit and tu.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and tus.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and filter1=$filter1
-    public function getDataSample3($name, $filter1)
+    public function getDataSample2($name, $filter1)
     {
-        $this->tabledef->registerTable("ueu_tbl_unit,ueu_tbl_user");
+        $this->tabledef->registerTable();
         $this->tabledef->db()->where("fiter1", $filter1);
-        return $this->tabledef->get_autoJoin("*");
+        return $this->tabledef->get_selectfromget_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
     }
 }
  */
