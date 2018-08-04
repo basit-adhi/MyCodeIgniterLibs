@@ -37,7 +37,7 @@ class DatabaseHelperBAP
         $this->CI =& get_instance();
         //--
         $this->CI->load->helper('variablebap');
-        $this->initialTableStructure();
+        $this->loadSession();
         $this->tables = new TableStructure();
     }
 
@@ -47,7 +47,7 @@ class DatabaseHelperBAP
      * Initial table structure
      * Customize this function, change all variable inside this function to fit your needs
      */
-    private function initialTableStructure()
+    private function loadSession()
     {
         $this->session_ofpartitionfield = array("tahunanggaran" => ifnull($this->CI->session->userdata("idtahunanggaran"), 0));
     }
@@ -92,6 +92,7 @@ class DatabaseHelperBAP
      */
     private function selectfrom($select, $fromtable)
     {
+        $this->loadSession();
         /* convert select to array */
         $fromtables     = explode(",", $fromtable);
         /* generate select and from */
