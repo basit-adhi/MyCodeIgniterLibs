@@ -129,31 +129,20 @@ class DatabaseHelperBAP
      * Adds a SELECT clause to a query, automatically add join, automatically add partition filter, then execute $this->CI->db->get()
      * @param type $select      The SELECT portion of a query
      * @param type $fromtable   table(s) to select, example1 : "table1", example2: "table1, table2" 
-     * @return type CI_DB_result instance (same as $this->CI->db->get())
-     */
-    function get_selectfrom($select, $fromtable)
-    {
-        $this->selectfrom($select, $fromtable);
-        return $this->get();
-    }
-    
-    // --------------------------------------------------------------------
-    
-    /**
-     * Adds a SELECT clause to a query, automatically add join, automatically add partition filter, then execute $this->CI->db->get()
-     * @param type $select      The SELECT portion of a query
-     * @param type $fromtable   table(s) to select, example1 : "table1", example2: "table1, table2" 
      * @param type $where       Filter / where portion of a query (array)
      * @return type CI_DB_result instance (same as $this->CI->db->get())
      */
-    function get_selectfrom_where($select, $fromtable, $where, $limit = null, $offset = null)
+    function get_selectfrom($select, $fromtable, $where = array(), $limit = null, $offset = null)
     {
         if ($limit != NULL)
         {
             $this->CI->db->limit($limit, ifnull($offset, 0));
         }
         $this->selectfrom($select, $fromtable);
-        $this->CI->db->where($where);
+        if (is_array($where) && count($where) > 0)
+        {
+            $this->CI->db->where($where);
+        }
         return $this->get();
     }
     
