@@ -62,7 +62,7 @@ class DropdownHelperBAP
             $returned_array = array();
             foreach ($data as $row)
             {
-                //bugs, somehow json_encode and openssl_encrypt cannot decode properly (in CI?)
+                //bugs, somehow json_encode and openssl_encrypt cannot decode properly
                 //we need add some string, that is for: {"firstkey 
                 //from: {"firstkey":0,"secondkey":1}
                 $bugsfix = str_repeat("_", strlen(key($row)) + 4);
@@ -92,9 +92,14 @@ Model application/models/Mexample.php
 <?php
 class Mexample extends CI_Model {
 
+    function __construct()
+    {
+	parent::__construct();
+        $this->load->library('DropdownHelperBAP');
+    }
+
     public function getData($name)
     {
-        $this->load->library('DropdownHelperBAP');
         $this->db->select('id, comments');
         $this->db->from('example_table');
 
