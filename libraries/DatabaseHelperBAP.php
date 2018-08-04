@@ -234,6 +234,7 @@ class Mexample extends CI_Model {
 
     function __construct()
     {
+	parent::__construct();
         $this->load->library('DatabaseHelperBAP');
         $this->tabledef = new DatabaseHelperBAP("ueu_tbl_unit,ueu_tbl_user");
     }
@@ -241,14 +242,12 @@ class Mexample extends CI_Model {
     //generate: select * from ueu_tbl_unit tu, ueu_tbl_user tus where tus.id_unit=tu.id_unit and tu.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and tus.tahunanggaran=$this->CI->session->userdata("idtahunanggaran")
     public function getDataSample1($name)
     {
-        $this->tabledef->registerTable();
         return $this->tabledef->get_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
     }
 
     //generate: select * from ueu_tbl_unit tu, ueu_tbl_user tus where tus.id_unit=tu.id_unit and tu.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and tus.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and filter1=$filter1
     public function getDataSample2($name, $filter1)
     {
-        $this->tabledef->registerTable();
         $this->tabledef->db()->where("fiter1", $filter1);
         return $this->tabledef->get_selectfromget_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
     }
