@@ -142,7 +142,7 @@ class DatabaseHelperBAP
      */
     function get_selectfrom($select, $fromtable)
     {
-        $this->autoJoin($select);
+        $this->selectfrom($select, $fromtable);
         return $this->get();
     }
     
