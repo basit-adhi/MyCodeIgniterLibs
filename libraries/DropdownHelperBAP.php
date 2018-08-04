@@ -65,7 +65,7 @@ class DropdownHelperBAP
                 //bugs, somehow json_encode and openssl_encrypt cannot decode properly
                 //we need add some string, that is for: {"firstkey 
                 //from: {"firstkey":0,"secondkey":1}
-                $bugsfix = str_repeat("_", strlen(key($row)) + 5);
+                $bugsfix = str_repeat("_", strlen(key($row)) + 10);
                 $returned_array[$this->CI->encryptbap->encrypt($name, $bugsfix.json_encode($row))] = $row[$labelfield];
             }
 
