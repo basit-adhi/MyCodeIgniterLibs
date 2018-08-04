@@ -53,3 +53,22 @@ function implode_2a($glue, $pieces1,  $pieces2)
 {
     return join($glue, array_map(  function ($p1, $p2) { return $p1." ".$p2; }, $pieces1, $pieces2));
 }
+
+/**
+ * Select an array from array of value
+ * @param type $array       Array to select by index
+ * @param type $arrayvalues Array of value use to select the Array
+ * @return type Selected array
+ */
+function select_array_from_values($array, $arrayvalues)
+{
+    $selectedarray  = array();
+    foreach ($arrayvalues as $value)
+    {
+        if (array_key_exists($value, $array)) 
+        {
+            $selectedarray[$value]  = $array[$value];
+        }
+    }
+    return $selectedarray;
+}
