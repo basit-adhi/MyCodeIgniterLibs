@@ -146,8 +146,12 @@ class DatabaseHelperBAP
      * @param type $where       Filter / where portion of a query (array)
      * @return type CI_DB_result instance (same as $this->CI->db->get())
      */
-    function get_selectfrom_where($select, $fromtable, $where)
+    function get_selectfrom_where($select, $fromtable, $where, $limit = null, $offset = null)
     {
+        if ($limit != NULL)
+        {
+            $this->CI->db->limit($limit, ifnull($offset, 0));
+        }
         $this->selectfrom($select, $fromtable);
         $this->CI->db->where($where);
         return $this->get();
@@ -256,7 +260,7 @@ class Mexample extends CI_Model {
     public function getDataSample2($name, $filter1)
     {
         $this->databasehelperbap->db()->where("fiter1", $filter1);
-        return $this->databasehelperbap->get_selectfromget_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
+        return $this->databasehelperbap->get_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
     }
 }
  */
