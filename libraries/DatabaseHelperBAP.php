@@ -40,16 +40,7 @@ class DatabaseHelperBAP
         $this->initialTableStructure();
         $this->tables = new TableStructure();
     }
-    
-    /**
-     * Constructor
-     * @param type $tablename   table(s) to select, example1 : "table1", example2: "table1, table2" 
-     */
-    function DatabaseHelperBAP($tablename)
-    {
-        $this->registerTable($tablename);
-    }
-    
+
     // --------------------------------------------------------------------
     
     /**
@@ -85,8 +76,8 @@ class DatabaseHelperBAP
             switch ($tablename)
             {
                 case "ueu_tbl_tahunanggaran"    : $this->tables->addTableStructure($tablename, "ta", "idtahunanggaran", array(), array()); break;
-                case "ueu_tbl_unit"             : $this->tables->addTableStructure($tablename, "tu", "id_unit", array("tahunanggaran"), array()); break;
-                case "ueu_tbl_user"             : $this->tables->addTableStructure($tablename, "tus", "idlog", array("tahunanggaran"), array("ueu_tbl_unit" => "id_unit")); break;
+                case "ueu_tbl_unit"             : $this->tables->addTableStructure($tablename, "tu", "id_unit", array(), array("tahunanggaran" => "tahunanggaran")); break;
+                case "ueu_tbl_user"             : $this->tables->addTableStructure($tablename, "tus", "idlog", array("ueu_tbl_unit" => "id_unit"), array("tahunanggaran" => "tahunanggaran")); break;
                 default: break;
             }
         }
@@ -99,7 +90,7 @@ class DatabaseHelperBAP
      * @param type $select      The SELECT portion of a query
      * @param type $fromtable   table(s) to select, example1 : "table1", example2: "table1, table2" 
      */
-    function selectfrom($select, $fromtable)
+    private function selectfrom($select, $fromtable)
     {
         /* convert select to array */
         $fromtables     = explode(",", $fromtable);
@@ -124,9 +115,9 @@ class DatabaseHelperBAP
             /* generate partition filter */
             if (!empty($this->tables->partitionkey[$table])) 
             {
-                foreach ($this->tables->partitionkey[$table] as $field)
+                foreach ($this->tables->partitionkey[$table] as $fieldPartitionInTable => $indexPartitionInSession)
                 {
-                    $this->CI->db->where($this->tables->tablealias[$table].".".$field, $this->session_ofpartitionfield[$field]);
+                    $this->CI->db->where($this->tables->tablealias[$table].".".$fieldPartitionInTable, $this->session_ofpartitionfield[$indexPartitionInSession]);
                 }
             }
         }
@@ -143,6 +134,22 @@ class DatabaseHelperBAP
     function get_selectfrom($select, $fromtable)
     {
         $this->selectfrom($select, $fromtable);
+        return $this->get();
+    }
+    
+    // --------------------------------------------------------------------
+    
+    /**
+     * Adds a SELECT clause to a query, automatically add join, automatically add partition filter, then execute $this->CI->db->get()
+     * @param type $select      The SELECT portion of a query
+     * @param type $fromtable   table(s) to select, example1 : "table1", example2: "table1, table2" 
+     * @param type $where       Filter / where portion of a query (array)
+     * @return type CI_DB_result instance (same as $this->CI->db->get())
+     */
+    function get_selectfrom_where($select, $fromtable, $where)
+    {
+        $this->selectfrom($select, $fromtable);
+        $this->CI->db->where($where);
         return $this->get();
     }
     
@@ -203,7 +210,7 @@ class TableStructure
      * @param string $tablealias    alias of the table
      * @param string $key           primary key of the table (without alias)
      * @param array $onjoin         other table that join in the current table (without alias), format: array("other table name" => "field in the current table that join to other table", ...)
-     * @param array $partitionkey   partition key (without alias), format: array("session index", ...)
+     * @param array $partitionkey   partition key (without alias), format: array("partition key in the table" => "session index", ...)
      */
     function addTableStructure($tablename, $tablealias, $key, $onjoin = array(), $partitionkey = array())
     {
@@ -217,8 +224,8 @@ class TableStructure
         }
         $this->name[]                       = $tablename;
         $this->key[$tablename]              = $key;
-        $this->partitionkey[$tablename]     = $partitionkey;
         $this->onjoin[$tablename]           = $onjoin;
+        $this->partitionkey[$tablename]     = $partitionkey;
     }
         
 }
@@ -236,20 +243,20 @@ class Mexample extends CI_Model {
     {
 	parent::__construct();
         $this->load->library('DatabaseHelperBAP');
-        $this->tabledef = new DatabaseHelperBAP("ueu_tbl_unit,ueu_tbl_user");
+        $this->databasehelperbap->registerTable("ueu_tbl_unit,ueu_tbl_user");
     }
 
     //generate: select * from ueu_tbl_unit tu, ueu_tbl_user tus where tus.id_unit=tu.id_unit and tu.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and tus.tahunanggaran=$this->CI->session->userdata("idtahunanggaran")
     public function getDataSample1($name)
     {
-        return $this->tabledef->get_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
+        return $this->databasehelperbap->get_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
     }
 
     //generate: select * from ueu_tbl_unit tu, ueu_tbl_user tus where tus.id_unit=tu.id_unit and tu.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and tus.tahunanggaran=$this->CI->session->userdata("idtahunanggaran") and filter1=$filter1
     public function getDataSample2($name, $filter1)
     {
-        $this->tabledef->db()->where("fiter1", $filter1);
-        return $this->tabledef->get_selectfromget_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
+        $this->databasehelperbap->db()->where("fiter1", $filter1);
+        return $this->databasehelperbap->get_selectfromget_selectfrom("*", "ueu_tbl_unit,ueu_tbl_user");
     }
 }
  */
