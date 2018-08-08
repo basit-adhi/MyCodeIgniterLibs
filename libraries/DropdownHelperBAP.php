@@ -65,9 +65,8 @@ class DropdownHelperBAP
                 //bugs, somehow json_encode and openssl_encrypt cannot decode properly
                 //we need insert an array element in the first position, that is for: {"firstkey 
                 //from: {"firstkey":0,"secondkey":1}
-		//become:
-		array_unshift($row, "thisisabugsfix" => "bugsfix");
-                $returned_array[$this->CI->encryptbap->encrypt($name, json_encode($row))] = $row[$labelfield];
+		$bugsfix = str_repeat("_", strlen(key($row)) + 15);
+                $returned_array[$this->CI->encryptbap->encrypt($name, $bugsfix.json_encode($row))] = $row[$labelfield];
             }
 
             return $returned_array;
@@ -81,7 +80,7 @@ class DropdownHelperBAP
      */
     function result_dropdown_json_decode($name, $postdata)
     {
-        return (array) json_decode($this->CI->encryptbap->decrypt($name, $postdata));
+        return (array) json_decode(strstr($this->CI->encryptbap->decrypt($name, $postdata), '{'));
     }
 }
 
