@@ -38,21 +38,37 @@ class EncryptBAP
         //--
         $this->key = new KeyBAP();
     }
-
+    
     /**
-     * Encrypt given plain text, all information saved to session with given name
+     * Generate key, then all information save to session with given name
      * @param string $name      name of the encryption in session
-     * @param string $plaintext text to encrypt
-     * @return string encrypted text
      */
-    function encrypt($name, $plaintext)
+    function generatekey($name)
     {
-        $ciphertext = "";
         //$key should have been previously generated in a cryptographically safe way, like openssl_random_pseudo_bytes
         $this->key->cipher = (version_compare(PHP_VERSION, '7.1.0', '>=')) ? "aes-128-gcm" : "aes-128-cbc";
         if (in_array($this->key->cipher, openssl_get_cipher_methods()))
         {
             $this->key->randomiv(openssl_cipher_iv_length($this->key->cipher));
+            $this->key->options = OPENSSL_RAW_DATA;
+            $this->name         = $name;
+            //store $cipher, $iv, and $tag for decryption later
+            $this->savekey();
+        }
+    }
+
+    /**
+     * Encrypt given plain text, with key from session with given name. Call generatekey() first
+     * @param string $plaintext text to encrypt
+     * @return string encrypted text
+     */
+    function encrypt($plaintext)
+    {
+        $this->loadkey();
+        $ciphertext = "";
+        //$key should have been previously generated in a cryptographically safe way, like openssl_random_pseudo_bytes
+        if (in_array($this->key->cipher, openssl_get_cipher_methods()))
+        {
             if (version_compare(PHP_VERSION, '5.3.3', '<'))
             {
                 $ciphertext         = openssl_encrypt($plaintext, $this->key->cipher, $this->key->key, $this->key->options=OPENSSL_RAW_DATA, $this->key->iv, $this->key->tag);
@@ -61,9 +77,6 @@ class EncryptBAP
             {
                 $ciphertext         = openssl_encrypt($plaintext, $this->key->cipher, $this->key->key, $this->key->options=OPENSSL_RAW_DATA, $this->key->iv);
             }
-            $this->name         = $name;
-            //store $cipher, $iv, and $tag for decryption later
-            $this->savekey();
         }
         return base64_encode($ciphertext);
     }
@@ -220,9 +233,11 @@ EXAMPLE
 //if you load from application/library
 //$this->CI =& get_instance();
 //$this->CI->load->library('EncryptBAP');
+//$this->CI->encryptbap->generatekey($name);
 //$enc = $this->CI->encryptbap->encrypt($name, "sometext");
 //$this->CI->encryptbap->decrypt($name, $enc);
 $this->load->library('EncryptBAP');
-$enc = $this->encryptbap->encrypt($name, "sometext");
+$this->encryptbap->generatekey($name);
+$enc = $this->encryptbap->encrypt("sometext");
 $enc = $this->encryptbap->decrypt($name, $enc);
  */
