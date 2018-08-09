@@ -158,7 +158,7 @@ If we have a data like this
 id  comments
 1   Hallo
 2   Hai
-Then it will generate dropdown like this
+Then it will generate dropdown like this (but actually, value is encrypted)
 <select name="dropdownname">
 <option value="{&quot;id&quot;:&quot;1&quot;,&quot;comments&quot;:&quot;Hallo&quot;}">Hallo</option>
 <option value="{&quot;id&quot;:&quot;2&quot;,&quot;comments&quot;:&quot;Hai&quot;}">Hai</option>
