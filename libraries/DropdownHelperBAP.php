@@ -27,6 +27,7 @@ class DropdownHelperBAP
         // Assign the CodeIgniter super-object
         $this->CI =& get_instance();
         //--
+        //$this->CI->load->library('encrypt'); --> deprecated for security reason
         $this->CI->load->library('EncryptBAP');
     }
     
@@ -60,15 +61,12 @@ class DropdownHelperBAP
     function result_dropdown_json($name, $data, $labelfield)
     {
             $returned_array = array();
+            $this->CI->encryptbap->generatekey($name);
             foreach ($data as $row)
             {
-                //bugs, somehow json_encode and openssl_encrypt cannot decode properly
-                //we need insert an array element in the first position, that is for: {"firstkey 
-                //from: {"firstkey":0,"secondkey":1}
-		$bugsfix = str_repeat("_", strlen(key($row)) + 15);
-                $returned_array[$this->CI->encryptbap->encrypt($name, $bugsfix.json_encode($row))] = $row[$labelfield];
+                $returned_array[$this->CI->encryptbap->encrypt(json_encode($row))] = $row[$labelfield];
+                //$returned_array[$this->CI->encrypt->encode(json_encode($row))] = $row[$labelfield];
             }
-
             return $returned_array;
     }
     
@@ -80,7 +78,8 @@ class DropdownHelperBAP
      */
     function result_dropdown_json_decode($name, $postdata)
     {
-        return (array) json_decode(strstr($this->CI->encryptbap->decrypt($name, $postdata), '{'));
+        return (array) json_decode($this->CI->encryptbap->decrypt($name, $postdata));
+        //return (array) json_decode($this->CI->encrypt->decode($postdata));
     }
 }
 
