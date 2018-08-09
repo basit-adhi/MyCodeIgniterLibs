@@ -27,7 +27,7 @@ class DropdownHelperBAP
         // Assign the CodeIgniter super-object
         $this->CI =& get_instance();
         //--
-        //$this->CI->load->library('encrypt'); --> deprecated for security reason
+        //$this->CI->load->library('encrypt'); //--> deprecated for security reason
         $this->CI->load->library('EncryptBAP');
     }
     
@@ -45,7 +45,6 @@ class DropdownHelperBAP
             {
                 $returned_array[$row[$valuefield]] = $row[$labelfield];
             }
-
             return $returned_array;
     }
 
@@ -64,7 +63,7 @@ class DropdownHelperBAP
             $this->CI->encryptbap->generatekey($name);
             foreach ($data as $row)
             {
-                $returned_array[$this->CI->encryptbap->encrypt(json_encode($row))] = $row[$labelfield];
+                $returned_array[$this->CI->encryptbap->encrypt_urlsafe(json_encode($row))] = $row[$labelfield];
                 //$returned_array[$this->CI->encrypt->encode(json_encode($row))] = $row[$labelfield];
             }
             return $returned_array;
@@ -78,7 +77,7 @@ class DropdownHelperBAP
      */
     function result_dropdown_json_decode($name, $postdata)
     {
-        return (array) json_decode($this->CI->encryptbap->decrypt($name, $postdata));
+        return (array) json_decode($this->CI->encryptbap->decrypt_urlsafe($name, $postdata));
         //return (array) json_decode($this->CI->encrypt->decode($postdata));
     }
 }
