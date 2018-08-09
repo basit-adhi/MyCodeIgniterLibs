@@ -39,6 +39,23 @@ class EncryptBAP
         $this->key = new KeyBAP();
     }
     
+    // --------------------------------------------------------------------
+    
+    /**
+     * Generate key if there is no key exists yet (then all information save to session with given name)
+     * @param string $name      name of the encryption in session
+     */
+    function generatekey_once($name)
+    {
+        $this->name = $name;
+        if ($this->CI->session->userdata("encryptBAPkey".$this->name) == "")
+        {
+            $this->generatekey($name);
+        }
+    }
+    
+    // --------------------------------------------------------------------
+    
     /**
      * Generate key, then all information save to session with given name
      * @param string $name      name of the encryption in session
@@ -56,13 +73,15 @@ class EncryptBAP
             $this->savekey();
         }
     }
+    
+    // --------------------------------------------------------------------
 
     /**
      * Encrypt given plain text, with key from session with given name. Call generatekey() first
      * @param string $plaintext text to encrypt
      * @return string encrypted text
      */
-    function encrypt($plaintext)
+    private function encryption_($plaintext)
     {
         $this->loadkey();
         $ciphertext = "";
@@ -71,14 +90,64 @@ class EncryptBAP
         {
             if (version_compare(PHP_VERSION, '5.3.3', '<'))
             {
-                $ciphertext         = openssl_encrypt($plaintext, $this->key->cipher, $this->key->key, $this->key->options=OPENSSL_RAW_DATA, $this->key->iv, $this->key->tag);
+                $ciphertext         = openssl_encrypt($plaintext, $this->key->cipher, $this->key->key, $this->key->options, $this->key->iv, $this->key->tag);
             }
             else
             {
-                $ciphertext         = openssl_encrypt($plaintext, $this->key->cipher, $this->key->key, $this->key->options=OPENSSL_RAW_DATA, $this->key->iv);
+                $ciphertext         = openssl_encrypt($plaintext, $this->key->cipher, $this->key->key, $this->key->options, $this->key->iv);
             }
         }
-        return base64_encode($ciphertext);
+        return $ciphertext;
+    }
+    
+    // --------------------------------------------------------------------
+    
+    /**
+     * Encrypt given plain text, with key from session with given name. Call generatekey() first
+     * @param string $plaintext text to encrypt
+     * @return string encrypted text
+     */
+    function encrypt($plaintext)
+    {
+        return base64_encode($this->encryption_($plaintext));
+    }
+    
+    // --------------------------------------------------------------------
+    
+    /**
+     * Encrypt given plain text, with key from session with given name. Call generatekey() first. URL SAFE
+     * @param string $plaintext text to encrypt
+     * @return string encrypted text
+     */
+    function encrypt_urlsafe($plaintext)
+    {
+        //https://stackoverflow.com/questions/10482712/how-url-encrypt-and-decrypt-in-codeigniter-every-refresh-encrypted-value-change
+        return urlencode(str_replace(array('+','/','='), array('-','_',''), $this->encrypt($plaintext)));
+    }
+    
+    // --------------------------------------------------------------------
+    
+    /**
+     * Decrypt cipher text, all information loaded from session with given name
+     * @param string $name          name of the encryption in session
+     * @param string $ciphertext    text to decrypt
+     * @return string original text
+     */
+    private function decryption_($name, $ciphertext)
+    {
+        $this->name         = $name;
+        $this->loadkey();
+        if (in_array($this->key->cipher, openssl_get_cipher_methods()))
+        {
+            if (version_compare(PHP_VERSION, '5.3.3', '<'))
+            {
+                return openssl_decrypt($ciphertext, $this->key->cipher, $this->key->key, $this->key->options, $this->key->iv, $this->key->tag);
+            }
+            else
+            {
+                return openssl_decrypt($ciphertext, $this->key->cipher, $this->key->key, $this->key->options, $this->key->iv);
+            }
+        }
     }
     
     // --------------------------------------------------------------------
@@ -91,20 +160,26 @@ class EncryptBAP
      */
     function decrypt($name, $ciphertext)
     {
-        $originaltext       = base64_decode($ciphertext);
-        $this->name         = $name;
-        $this->loadkey();
-        if (in_array($this->key->cipher, openssl_get_cipher_methods()))
+        return $this->decryption_($name, base64_decode($ciphertext));
+    }
+    
+    // --------------------------------------------------------------------
+    
+    /**
+     * Decrypt cipher text, all information loaded from session with given name. URL SAFE
+     * @param string $name          name of the encryption in session
+     * @param string $ciphertext    text to decrypt
+     * @return string original text
+     */
+    function decrypt_urlsafe($name, $ciphertext)
+    {
+        $ciphertext_ = str_replace(array('-','_'),array('+','/'), urldecode($ciphertext));
+        $mod4 = strlen($ciphertext_) % 4;
+        if ($mod4) 
         {
-            if (version_compare(PHP_VERSION, '5.3.3', '<'))
-            {
-                return openssl_decrypt($originaltext, $this->key->cipher, $this->key->key, $this->key->options=OPENSSL_RAW_DATA, $this->key->iv, $this->key->tag);
-            }
-            else
-            {
-                return openssl_decrypt($originaltext, $this->key->cipher, $this->key->key, $this->key->options=OPENSSL_RAW_DATA, $this->key->iv);
-            }
+            $ciphertext_ .= substr('====', $mod4);
         }
+        return $this->decrypt($name, $ciphertext_);
     }
     
     // --------------------------------------------------------------------
@@ -114,7 +189,6 @@ class EncryptBAP
      */
     private function savekey()
     {
-        $this->key->serialize();
         $this->CI->session->set_userdata("encryptBAPkey".$this->name, $this->key->serialize());
     }
     
