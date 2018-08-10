@@ -11,14 +11,26 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 
 /**
- * return non-null variable
- * @param type $input       input
- * @param type $alternative alternative if input is null or not set yet
+ * return non-null value. If input non null then return input else return alternative
+ * @param type $input       Input to check
+ * @param type $alternative Alternative if input is null or not set yet
  * @return type non null output
  */
 function ifnull($input, $alternative)
 {
     return (!isset($input) || is_null($input) || trim($input) == "") ? $alternative : $input;
+}
+
+/**
+ * return non-null value caused by no index found. If index is found then return array[index] else return alternative
+ * @param type $index       Value to check
+ * @param type $array       An array with keys to check
+ * @param type $alternative Alternative if input is null or not set yet
+ * @return type non null output
+ */
+function ifnoindexarray($index, $array, $alternative)
+{
+    return (!array_key_exists($index, $array)) ? $alternative : $array[$index];
 }
 
 /**
