@@ -49,6 +49,8 @@ class DatabaseHelperBAP
      */
     private function loadSession()
     {
+//Example:
+//        $this->session_ofpartitionfield = array("tahunanggaran" => ifnull($this->CI->session->userdata("idtahunanggaran"), 0));
         $this->session_ofpartitionfield = array("tahunanggaran" => ifnull($this->CI->session->userdata("idtahunanggaran"), 0));
     }
     
@@ -56,8 +58,12 @@ class DatabaseHelperBAP
     
     /**
      * Register table(s) definition
+     * Example 1:
+     * $this->databasehelperbap->registerTable("table1");           - will register a table
+     * Example 2:
+     * $this->databasehelperbap->registerTable("table1, table2");   - will register more than one table
      * Customize this function (conditional switch), change to fit your tables definition
-     * @param type $tablename   table(s) to select, example1 : "table1", example2: "table1, table2" 
+     * @param type $tablename   table(s) to select
      */
     function registerTable($tablename)
     {
@@ -73,6 +79,14 @@ class DatabaseHelperBAP
         elseif (!array_key_exists($tablename, $this->tables->name))
         {
             //Customize this conditional switch, change to fit your tables definition
+//Example:
+//            switch ($tablename)
+//            {
+//                case "ueu_tbl_tahunanggaran"    : $this->tables->addTableStructure($tablename, "ta", "idtahunanggaran", array(), array()); break;
+//                case "ueu_tbl_unit"             : $this->tables->addTableStructure($tablename, "tu", "id_unit", array(), array("tahunanggaran" => "tahunanggaran")); break;
+//                case "ueu_tbl_user"             : $this->tables->addTableStructure($tablename, "tus", "idlog", array("ueu_tbl_unit" => "id_unit"), array("tahunanggaran" => "tahunanggaran")); break;
+//                default: break;
+//            }
             switch ($tablename)
             {
                 case "ueu_tbl_tahunanggaran"    : $this->tables->addTableStructure($tablename, "ta", "idtahunanggaran", array(), array()); break;
@@ -127,7 +141,19 @@ class DatabaseHelperBAP
     // --------------------------------------------------------------------
     
     /**
-     * Adds a SELECT clause to a query, automatically add join, automatically add partition filter, then execute $this->CI->db->get()
+     * Adds a SELECT clause to a query, automatically add join, automatically add partition filter, then execute $this->CI->db->get(). You can combine with CI Query Builder before use this function.
+     * Same as if you use CI:
+     * $this->db->select($select);
+     * $this->db->from($fromtable);
+     * $this->db->where($join1, $join2);        - implicit, see registerTable()
+     * $this->db->where($partitionkey, $value); - implicit, see registerTable()
+     * $this->db->get();
+     * Example 1:
+     * $this->databasehelperbap->get_selectfrom("*", "ueu_tbl_unit");
+     * Example 2:
+     * $this->db->order_by($order);
+     * $this->db->where($customwhere);
+     * $this->databasehelperbap->get_selectfrom("*", "ueu_tbl_unit");
      * @param type $select      The SELECT portion of a query
      * @param type $fromtable   table(s) to select, example1 : "table1", example2: "table1, table2" 
      * @param type $where       Filter / where portion of a query (array)
@@ -208,18 +234,21 @@ class TableStructure
      */
     function addTableStructure($tablename, $tablealias, $key, $onjoin = array(), $partitionkey = array())
     {
-        if (!in_array_r($tablealias, $this->tablealias))
+        if (!in_array_r($tablename, $this->name))
         {
-            $this->tablealias[$tablename]   = $tablealias;
+            if (!in_array_r($tablealias, $this->tablealias))
+            {
+                $this->tablealias[$tablename]   = $tablealias;
+            }
+            else
+            {
+                echo "ERROR: Duplicate Table Alias!!";
+            }
+            $this->name[]                       = $tablename;
+            $this->key[$tablename]              = $key;
+            $this->onjoin[$tablename]           = $onjoin;
+            $this->partitionkey[$tablename]     = $partitionkey;
         }
-        else
-        {
-            echo "ERROR: Duplicate Table Alias!!";
-        }
-        $this->name[]                       = $tablename;
-        $this->key[$tablename]              = $key;
-        $this->onjoin[$tablename]           = $onjoin;
-        $this->partitionkey[$tablename]     = $partitionkey;
     }
         
 }
