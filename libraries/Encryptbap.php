@@ -48,7 +48,7 @@ class Encryptbap
     function generatekey_once($name)
     {
         $this->name = $name;
-        if ($this->CI->session->userdata("encryptBAPkey".$this->name) == "")
+        if (ifnull($this->CI->session->userdata("encryptBAPkey".$this->name), "") == "")
         {
             $this->generatekey($name);
         }
