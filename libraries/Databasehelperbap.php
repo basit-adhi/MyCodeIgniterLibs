@@ -51,7 +51,7 @@ class Databasehelperbap
     {
 //Example:
 //        $this->session_ofpartitionfield = array("tahunanggaran" => ifnull($this->CI->session->userdata("idtahunanggaran"), 0));
-        //$this->session_ofpartitionfield = array("tahunanggaran" => ifnull($this->CI->session->userdata("idtahunanggaran"), 0));
+	  
     }
     
     // --------------------------------------------------------------------
