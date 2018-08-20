@@ -71,6 +71,6 @@ class Pageaccessrightbap
      */
     function checkAccessRight($page_id)
     {
-        return in_array($page_id, (array) json_decode($this->CI->session->userdata("PageAccessRightBAP")));
+        return in_array($page_id, (array) json_decode(ifnull($this->CI->session->userdata("PageAccessRightBAP"), array())));
     }
 }
