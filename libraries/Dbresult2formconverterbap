@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * DbResult2FormConverterBAP.php
+ * Dbresult2formconverterbap.php
  * <br />Database Result Form Class
  * <br />
  * <br />This is a DB_result converter to an associative array of options to be listed at form_dropdown(), form_radio()
@@ -10,7 +10,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * 
  * @author Basit Adhi Prabowo, S.T. <basit@unisayogya.ac.id>
  * @access public
- * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/libraries/DbResult2FormConverterBAP.php
+ * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/libraries/Dbresult2formconverterbap.php
  */
 class Dbresult2formconverterbap
 {
