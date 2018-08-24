@@ -6,7 +6,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * <br />Encrypt Text Class (EncryptBAP)
  * <br />
  * <br />This is an encrypt and decrypt helper
- * 
+ * <br/>IMPORTANT:
+ * <br/>1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
  * @author Basit Adhi Prabowo, S.T. <basit@unisayogya.ac.id>
  * @access public
  * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/libraries/Encryptbap.php
@@ -49,7 +50,7 @@ class Encryptbap
     
     /**
      * Generate key if there is no key exists yet (then all information save to session with given name)
-     * @param string $name      name of the encryption in session
+     * @param string $name      name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
      */
     function generatekey_once($name)
     {
@@ -64,7 +65,7 @@ class Encryptbap
     
     /**
      * Generate key, then all information save to session with given name
-     * @param string $name      name of the encryption in session
+     * @param string $name      name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
      */
     function generatekey($name)
     {
@@ -149,7 +150,7 @@ class Encryptbap
     
     /**
      * Decrypt cipher text, all information loaded from session with given name
-     * @param string $name          name of the encryption in session
+     * @param string $name          name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
      * @param string $ciphertext    text to decrypt
      * @return string original text
      */
@@ -180,7 +181,7 @@ class Encryptbap
     
     /**
      * Decrypt cipher text, all information loaded from session with given name
-     * @param string $name          name of the encryption in session
+     * @param string $name          name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
      * @param string $ciphertext    text to decrypt
      * @return string original text
      */
@@ -193,7 +194,7 @@ class Encryptbap
     
     /**
      * Decrypt cipher text, all information loaded from session with given name. URL SAFE
-     * @param string $name          name of the encryption in session
+     * @param string $name          name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
      * @param string $ciphertext    text to decrypt
      * @param string $type          json or default
      * @return string original text
@@ -305,7 +306,7 @@ class Encryptbap
      */
     function serialize()
     {
-        return base64_encode(serialize(array("cipher"=>$this->key["cipher"], "key"=>$this->key["key"], "options"=>$this->key["options"], "iv"=>$this->key["iv"], "tag"=>$this->key["tag"], "type"=>$this->key["type"])));
+        return serialize(array("cipher"=>$this->key["cipher"], "key"=>$this->key["key"], "options"=>$this->key["options"], "iv"=>$this->key["iv"], "tag"=>base64_encode($this->key["tag"]), "type"=>$this->key["type"]));
     }
     
     // --------------------------------------------------------------------
@@ -316,7 +317,8 @@ class Encryptbap
      */
     function unserialize($sessionvalue)
     {
-        $this->key  = (array) unserialize(base64_decode($sessionvalue));
+        $this->key  = (array) unserialize($sessionvalue);
+        $this->key["tag"] = base64_decode($this->key["tag"]);
         if ($this->debug)
         {
             echo "<br/>Unserialize value: ";
@@ -346,4 +348,7 @@ $this->load->library('EncryptBAP');
 $this->encryptbap->generatekey($name);
 $enc = $this->encryptbap->encrypt("sometext");
 $enc = $this->encryptbap->decrypt($name, $enc);
+ 
+IMPORTANT:
+1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
  */
