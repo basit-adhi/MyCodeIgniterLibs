@@ -53,7 +53,7 @@ class Dbresult2formconverterbap
 
     /**
      * Query result to "json dropdown/radio"-data.
-     *
+     * @param   string  $name       name of key
      * @param   array   $data       data from database result
      * @param	string	$labelfield field name using as label in the dropdown
      * @return	array
@@ -72,7 +72,7 @@ class Dbresult2formconverterbap
     
     /**
      * Convert "json dropdown"-data to an array
-     * 
+     * @param   string  $name       name of key
      * @param string $postdata  string from POST Method
      * @return array
      */
@@ -94,7 +94,7 @@ class Mexample extends CI_Model {
     function __construct()
     {
 	parent::__construct();
-        $this->load->library('DbResult2FormConverterBAP');
+        $this->load->library('Dbresult2formconverterbap');
     }
 
     public function getData($name)
