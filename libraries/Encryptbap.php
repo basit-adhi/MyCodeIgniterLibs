@@ -7,7 +7,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * <br />
  * <br />This is an encrypt and decrypt helper
  * <br/>IMPORTANT:
- * <br/>1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
+ * <br/>if use moresecure mode, 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
  * @author Basit Adhi Prabowo, S.T. <basit@unisayogya.ac.id>
  * @access public
  * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/libraries/Encryptbap.php
@@ -34,6 +34,11 @@ class Encryptbap
      * @var boolean is in mode debug? 
      */
     private $debug = false;
+    /**
+     *
+     * @var boolean is more secure mode? (generate new tag every encrypt)
+     */
+    private $moresecure = false;
     
     // We'll use a constructor, as you can't directly call a function
     // from a property definition.
@@ -50,14 +55,15 @@ class Encryptbap
     
     /**
      * Generate key if there is no key exists yet (then all information save to session with given name)
-     * @param string $name      name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
+     * @param string $name          name of the encryption in session. IMPORTANT: if use moresecure mode, 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
+     * @param boolean $moresecure   is more secure mode?
      */
-    function generatekey_once($name)
+    function generatekey_once($name, $moresecure=false)
     {
         $this->name = $name;
         if (ifnull($this->CI->session->userdata("encryptBAPkey".$this->name), "") == "")
         {
-            $this->generatekey($name);
+            $this->generatekey($name, $moresecure);
         }
     }
     
@@ -65,12 +71,14 @@ class Encryptbap
     
     /**
      * Generate key, then all information save to session with given name
-     * @param string $name      name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
+     * @param string $name      name of the encryption in session. IMPORTANT: if use moresecure mode, 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
+     * @param boolean $moresecure   is more secure mode?
      */
-    function generatekey($name)
+    function generatekey($name, $moresecure=false)
     {
+        $this->moresecure   = $moresecure;
         //$key should have been previously generated in a cryptographically safe way, like openssl_random_pseudo_bytes
-        $this->key["cipher"] = (version_compare(PHP_VERSION, '7.1.0', '>=')) ? "aes-128-gcm" : "aes-128-cbc";
+        $this->key["cipher"] = ($this->moresecure) ? "aes-128-gcm" : "aes-128-cbc";
         if (in_array($this->key["cipher"], openssl_get_cipher_methods()))
         {
             $this->randomkey(10);
@@ -97,13 +105,13 @@ class Encryptbap
         //$key should have been previously generated in a cryptographically safe way, like openssl_random_pseudo_bytes
         if (in_array($this->key["cipher"], openssl_get_cipher_methods()))
         {
-            if (version_compare(PHP_VERSION, '5.3.3', '<'))
+            if ($this->moresecure)
             {
-                $ciphertext         = openssl_encrypt($plaintext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"]);
+                $ciphertext         = openssl_encrypt($plaintext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"], $this->key["tag"]);
             }
             else
             {
-                $ciphertext         = openssl_encrypt($plaintext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"], $this->key["tag"]);
+                $ciphertext         = openssl_encrypt($plaintext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"]);
             }
         }
         if ($this->debug)
@@ -150,7 +158,7 @@ class Encryptbap
     
     /**
      * Decrypt cipher text, all information loaded from session with given name
-     * @param string $name          name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
+     * @param string $name          name of the encryption in session. IMPORTANT: if use moresecure mode, 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
      * @param string $ciphertext    text to decrypt
      * @return string original text
      */
@@ -161,13 +169,13 @@ class Encryptbap
         $this->loadkey();
         if (in_array($this->key["cipher"], openssl_get_cipher_methods()))
         {
-            if (version_compare(PHP_VERSION, '5.3.3', '<'))
+            if ($this->moresecure)
             {
-                $plaintext = openssl_decrypt($ciphertext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"]);
+                $plaintext = openssl_decrypt($ciphertext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"], $this->key["tag"]);
             }
             else
             {
-                $plaintext = openssl_decrypt($ciphertext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"], $this->key["tag"]);
+                $plaintext = openssl_decrypt($ciphertext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"]);
             }
             if ($this->debug)
             {
@@ -181,7 +189,7 @@ class Encryptbap
     
     /**
      * Decrypt cipher text, all information loaded from session with given name
-     * @param string $name          name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
+     * @param string $name          name of the encryption in session. IMPORTANT: if use moresecure mode, 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
      * @param string $ciphertext    text to decrypt
      * @return string original text
      */
@@ -194,7 +202,7 @@ class Encryptbap
     
     /**
      * Decrypt cipher text, all information loaded from session with given name. URL SAFE
-     * @param string $name          name of the encryption in session. IMPORTANT: 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
+     * @param string $name          name of the encryption in session. IMPORTANT: if use moresecure mode, 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
      * @param string $ciphertext    text to decrypt
      * @param string $type          json or default
      * @return string original text
@@ -350,5 +358,5 @@ $enc = $this->encryptbap->encrypt("sometext");
 $enc = $this->encryptbap->decrypt($name, $enc);
  
 IMPORTANT:
-1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
+if use moresecure mode, 1 name for 1 encrypt-decrypt, because every encrypt will generate unique tag
  */
