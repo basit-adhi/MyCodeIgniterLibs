@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
  * Encryptbap.php
- * <br />Encrypt Text Class (EncryptBAP) and Encrypt Information Class (KeyBAP)
+ * <br />Encrypt Text Class (EncryptBAP)
  * <br />
  * <br />This is an encrypt and decrypt helper
  * 
@@ -20,7 +20,7 @@ class Encryptbap
     protected $CI;
     /**
      *
-     * @var keyBAP store encryption information, needed for decrypt
+     * @var array store encryption information, needed for decrypt
      */
     private $key;
     /**
@@ -28,6 +28,11 @@ class Encryptbap
      * @var string name of the encryption in session
      */
     private $name;
+    /**
+     *
+     * @var boolean is in mode debug? 
+     */
+    private $debug = false;
     
     // We'll use a constructor, as you can't directly call a function
     // from a property definition.
@@ -36,7 +41,8 @@ class Encryptbap
         // Assign the CodeIgniter super-object
         $this->CI =& get_instance();
         //--
-        $this->key = new KeyBAP();
+        $this->key["type"]  = "";
+        $this->key["tag"]   = "";
     }
     
     // --------------------------------------------------------------------
@@ -63,12 +69,13 @@ class Encryptbap
     function generatekey($name)
     {
         //$key should have been previously generated in a cryptographically safe way, like openssl_random_pseudo_bytes
-        $this->key->cipher = (version_compare(PHP_VERSION, '7.1.0', '>=')) ? "aes-128-gcm" : "aes-128-cbc";
-        if (in_array($this->key->cipher, openssl_get_cipher_methods()))
+        $this->key["cipher"] = (version_compare(PHP_VERSION, '7.1.0', '>=')) ? "aes-128-gcm" : "aes-128-cbc";
+        if (in_array($this->key["cipher"], openssl_get_cipher_methods()))
         {
-            $this->key->randomiv(openssl_cipher_iv_length($this->key->cipher));
-            $this->key->options = OPENSSL_RAW_DATA;
-            $this->name         = $name;
+            $this->randomkey(10);
+            $this->randomiv(openssl_cipher_iv_length($this->key["cipher"]));
+            $this->key["options"]   = OPENSSL_RAW_DATA;
+            $this->name             = $name;
             //store $cipher, $iv, and $tag for decryption later
             $this->savekey();
         }
@@ -79,24 +86,31 @@ class Encryptbap
     /**
      * Encrypt given plain text, with key from session with given name. Call generatekey() first
      * @param string $plaintext text to encrypt
+     * @param string $type      json or default
      * @return string encrypted text
      */
-    private function encryption_($plaintext)
+    private function encryption_($plaintext, $type)
     {
         $this->loadkey();
         $ciphertext = "";
         //$key should have been previously generated in a cryptographically safe way, like openssl_random_pseudo_bytes
-        if (in_array($this->key->cipher, openssl_get_cipher_methods()))
+        if (in_array($this->key["cipher"], openssl_get_cipher_methods()))
         {
             if (version_compare(PHP_VERSION, '5.3.3', '<'))
             {
-                $ciphertext         = openssl_encrypt($plaintext, $this->key->cipher, $this->key->key, $this->key->options, $this->key->iv, $this->key->tag);
+                $ciphertext         = openssl_encrypt($plaintext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"]);
             }
             else
             {
-                $ciphertext         = openssl_encrypt($plaintext, $this->key->cipher, $this->key->key, $this->key->options, $this->key->iv);
+                $ciphertext         = openssl_encrypt($plaintext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"], $this->key["tag"]);
             }
         }
+        if ($this->debug)
+        {
+            echo "<br/>Encrypt ".$plaintext." to ".$ciphertext;
+        }
+        $this->key["type"] = $type;
+        $this->savekey();
         return $ciphertext;
     }
     
@@ -105,11 +119,12 @@ class Encryptbap
     /**
      * Encrypt given plain text, with key from session with given name. Call generatekey() first
      * @param string $plaintext text to encrypt
+     * @param string $type      json or default
      * @return string encrypted text
      */
-    function encrypt($plaintext)
+    function encrypt($plaintext, $type = "")
     {
-        return base64_encode($this->encryption_($plaintext));
+        return base64_encode($this->encryption_($plaintext, $type));
     }
     
     // --------------------------------------------------------------------
@@ -117,12 +132,17 @@ class Encryptbap
     /**
      * Encrypt given plain text, with key from session with given name. Call generatekey() first. URL SAFE
      * @param string $plaintext text to encrypt
+     * @param string $type      json or default
      * @return string encrypted text
      */
-    function encrypt_urlsafe($plaintext)
+    function encrypt_urlsafe($plaintext, $type = "")
     {
         //https://stackoverflow.com/questions/10482712/how-url-encrypt-and-decrypt-in-codeigniter-every-refresh-encrypted-value-change
-        return urlencode(str_replace(array('+','/','='), array('-','_',''), $this->encrypt($plaintext)));
+        switch ($type)
+        {
+            case "json": return urlencode(str_replace(array('+','/','='), array('-','_',''), $this->encrypt(json_encode($plaintext), $type)));
+            default: return urlencode(str_replace(array('+','/','='), array('-','_',''), $this->encrypt($plaintext, $type)));
+        }
     }
     
     // --------------------------------------------------------------------
@@ -135,19 +155,25 @@ class Encryptbap
      */
     private function decryption_($name, $ciphertext)
     {
-        $this->name         = $name;
+        $plaintext      = "";
+        $this->name     = $name;
         $this->loadkey();
-        if (in_array($this->key->cipher, openssl_get_cipher_methods()))
+        if (in_array($this->key["cipher"], openssl_get_cipher_methods()))
         {
             if (version_compare(PHP_VERSION, '5.3.3', '<'))
             {
-                return openssl_decrypt($ciphertext, $this->key->cipher, $this->key->key, $this->key->options, $this->key->iv, $this->key->tag);
+                $plaintext = openssl_decrypt($ciphertext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"]);
             }
             else
             {
-                return openssl_decrypt($ciphertext, $this->key->cipher, $this->key->key, $this->key->options, $this->key->iv);
+                $plaintext = openssl_decrypt($ciphertext, $this->key["cipher"], $this->key["key"], $this->key["options"], $this->key["iv"], $this->key["tag"]);
+            }
+            if ($this->debug)
+            {
+                echo "<br/>Decrypt ".$ciphertext." to ".$plaintext;
             }
         }
+        return $plaintext;
     }
     
     // --------------------------------------------------------------------
@@ -169,6 +195,7 @@ class Encryptbap
      * Decrypt cipher text, all information loaded from session with given name. URL SAFE
      * @param string $name          name of the encryption in session
      * @param string $ciphertext    text to decrypt
+     * @param string $type          json or default
      * @return string original text
      */
     function decrypt_urlsafe($name, $ciphertext)
@@ -179,7 +206,11 @@ class Encryptbap
         {
             $ciphertext_ .= substr('====', $mod4);
         }
-        return $this->decrypt($name, $ciphertext_);
+        switch ($this->key["type"])
+        {
+            case "json": return json_decode($this->decrypt($name, $ciphertext_));
+            default: return $this->decrypt($name, $ciphertext_);
+        }
     }
     
     // --------------------------------------------------------------------
@@ -189,7 +220,15 @@ class Encryptbap
      */
     private function savekey()
     {
-        $this->CI->session->set_userdata("encryptBAPkey".$this->name, $this->key->serialize());
+        $this->CI->session->set_userdata("encryptBAPkey".$this->name, $this->serialize());
+        if ($this->debug)
+        {
+            echo "<br/>Save Key Debug";
+            echo "<br/>Log Process...: ";
+            $this->print_();
+            echo "<br/>Data yang akan disimpan ke Sesi: ".$this->serialize();
+            echo "<br/>Session data..: ".$this->CI->session->userdata("encryptBAPkey".$this->name);
+        }
     }
     
     // --------------------------------------------------------------------
@@ -199,31 +238,24 @@ class Encryptbap
      */
     private function loadkey()
     {
-        $this->key = new KeyBAP();
-        $this->key->unserialize($this->CI->session->userdata("encryptBAPkey".$this->name));
+        $this->unserialize($this->CI->session->userdata("encryptBAPkey".$this->name));
+        if ($this->debug)
+        {
+            echo "<br/>Load Key Debug";
+            echo "<br/>Log Process...: ";
+            $this->print_();
+            echo "<br/>Session data..: ".$this->CI->session->userdata("encryptBAPkey".$this->name);
+        }
     }
-}
-
-class KeyBAP
-{
-    //all variable
-    public $cipher;
-    public $key;
-    public $options;
-    public $iv;
-    public $tag;
     
-    // We'll use a constructor, as you can't directly call a function
-    // from a property definition.
-    function __construct()
+    /**
+     * Allow to debug, print information needed
+     */
+    function debugmode_on()
     {
-        $this->cipher   = "";
-        $this->randomkey(10);
-        $this->options  = "";
-        $this->iv       = "";
-        $this->tag      = "";
+        $this->debug = true;
     }
-    
+
     // --------------------------------------------------------------------
     
     /**
@@ -251,7 +283,7 @@ class KeyBAP
      */
     function randomkey($length)
     {
-        $this->key  = $this->randchar($length);
+        $this->key["key"]  = $this->randchar($length);
     }
     
     // --------------------------------------------------------------------
@@ -262,7 +294,7 @@ class KeyBAP
      */
     function randomiv($length)
     {
-        $this->iv   = $this->randchar($length);
+        $this->key["iv"]   = $this->randchar($length);
     }
     
     // --------------------------------------------------------------------
@@ -273,7 +305,7 @@ class KeyBAP
      */
     function serialize()
     {
-        return base64_encode(serialize(array("cipher"=>$this->cipher, "key"=>$this->key, "options"=>$this->options, "iv"=>$this->iv, "tag"=>$this->tag)));
+        return base64_encode(serialize(array("cipher"=>$this->key["cipher"], "key"=>$this->key["key"], "options"=>$this->key["options"], "iv"=>$this->key["iv"], "tag"=>$this->key["tag"], "type"=>$this->key["type"])));
     }
     
     // --------------------------------------------------------------------
@@ -284,12 +316,12 @@ class KeyBAP
      */
     function unserialize($sessionvalue)
     {
-        $s  = (array) unserialize(base64_decode($sessionvalue));
-        $this->cipher   = $s["cipher"];
-        $this->key      = $s["key"];
-        $this->options  = $s["options"];
-        $this->iv       = $s["iv"];
-        $this->tag      = $s["tag"];
+        $this->key  = (array) unserialize(base64_decode($sessionvalue));
+        if ($this->debug)
+        {
+            echo "<br/>Unserialize value: ";
+            print_r($this->key);
+        }
     }
     
     // --------------------------------------------------------------------
@@ -299,7 +331,7 @@ class KeyBAP
      */
     function print_()
     {
-        echo "cipher:".$this->cipher."|key:".$this->key."|options:".$this->options."|iv:".$this->iv."|tag:".$this->tag."z";
+        echo "cipher:".$this->key["cipher"]."|key:".$this->key["key"]."|options:".$this->key["options"]."|iv:".$this->key["iv"]."|tag:".$this->key["tag"]."|type:".$this->key["type"];
     }
 }
 /**
