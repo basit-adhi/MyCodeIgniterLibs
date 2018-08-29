@@ -104,3 +104,29 @@ function select_array_from_values($array, $arrayvalues)
     }
     return $selectedarray;
 }
+
+/**
+ * Create new 1d array from array
+ * Example
+ * $a = Array ( "0" => Array ( "id" => 1, "code" => 1, "name" => "academic" ), "0" => Array ( "id" => 9, "code" => 2, "name" => "resource" ) );
+ * print_r(array_from_array($a, "code", "name"));                       -  output: Array ( [1] => academic [2] => name ) 
+ * @param type $array           source array
+ * @param type $indexasindex    index of $array as index in the new array
+ * @param type $indexasvalue    value of $array as index in the new array
+ * @return type New array
+ */
+function array_from_array($array, $indexasindex, $indexasvalue)
+{
+    if (array_key_exists($indexasindex, $array) && array_key_exists($indexasvalue, $array))
+    {
+        foreach($array as $arr)
+        {
+            $newarray[$arr[$indexasindex]]  = $arr[$indexasvalue];
+        }
+        return $newarray;
+    }
+    else
+    {
+        return array();
+    }
+}
