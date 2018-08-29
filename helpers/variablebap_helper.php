@@ -55,6 +55,7 @@ function ifnoindexarray($index, $array, $alternative)
  */
 function in_array_r($needle, $haystack, $strict = false) 
 {
+    reset($haystack);
     foreach ($haystack as $item) 
     {
         if (($strict ? $item === $needle : $item == $needle) || (is_array($item) && in_array_r($needle, $item, $strict))) 
@@ -78,6 +79,7 @@ function in_array_r($needle, $haystack, $strict = false)
  */
 function array_key_exists_r($key, $array) 
 {
+    reset($array);
     foreach ($array as $k=>$item) 
     {
         if (($k == $key) || (is_array($item) && array_key_exists_r($key, $item))) 
@@ -118,6 +120,7 @@ function implode_2a($glue, $pieces1,  $pieces2)
 function select_array_from_values($array, $arrayvalues)
 {
     $selectedarray  = array();
+    reset($arrayvalues);
     foreach ($arrayvalues as $value)
     {
         if (array_key_exists($value, $array)) 
@@ -142,6 +145,7 @@ function array_from_array($array, $indexasindex, $indexasvalue)
 {
     if (array_key_exists_r($indexasindex, $array) && array_key_exists_r($indexasvalue, $array))
     {
+        reset($array);
         foreach($array as $arr)
         {
             $newarray[$arr[$indexasindex]]  = $arr[$indexasvalue];
