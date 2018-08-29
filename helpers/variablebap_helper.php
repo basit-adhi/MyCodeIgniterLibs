@@ -66,6 +66,29 @@ function in_array_r($needle, $haystack, $strict = false)
 }
 
 /**
+ * Checks if a key exists in an multidimensional array
+ * just like in_array_r()
+ * Example:
+ * $a = array(array(1,2), array("x" => 4));
+ * echo array_key_exists_r("x", $a);    - output: TRUE, remember: this function will checks array index
+ * echo in_array_r(1, $a);              - output: FALSE
+ * @param type $key         Value to check
+ * @param type $array       The array
+ * @return boolean          TRUE if key is found as key in the array, FALSE otherwise
+ */
+function array_key_exists_r($key, $array) 
+{
+    foreach ($array as $key=>$item) 
+    {
+        if (($key == $needle) || (is_array($item) && array_key_exists_r($needle, $item))) 
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Join 2 array element with a string
  * source: https://stackoverflow.com/questions/23241554/is-it-possible-to-implode-two-different-arrays-in-php
  * Example:
@@ -117,7 +140,7 @@ function select_array_from_values($array, $arrayvalues)
  */
 function array_from_array($array, $indexasindex, $indexasvalue)
 {
-    if (array_key_exists($indexasindex, $array) && array_key_exists($indexasvalue, $array))
+    if (array_key_exists_r($indexasindex, $array) && array_key_exists_r($indexasvalue, $array))
     {
         foreach($array as $arr)
         {
