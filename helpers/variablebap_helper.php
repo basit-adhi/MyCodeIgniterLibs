@@ -78,9 +78,9 @@ function in_array_r($needle, $haystack, $strict = false)
  */
 function array_key_exists_r($key, $array) 
 {
-    foreach ($array as $key=>$item) 
+    foreach ($array as $k=>$item) 
     {
-        if (($key == $needle) || (is_array($item) && array_key_exists_r($needle, $item))) 
+        if (($k == $key) || (is_array($item) && array_key_exists_r($key, $item))) 
         {
             return true;
         }
