@@ -132,10 +132,35 @@ function select_array_from_values($array, $arrayvalues)
 }
 
 /**
+ * Create a text from text of index that select on the array
+ * Example
+ * $a = Array ( "1" => "one", "2" => "two" );
+ * echo text_from_array(",", "2,1,2", $a);                              - output: two,one,two
+ * @param type $delimiter   The boundary of string
+ * @param type $indextext   Selected index
+ * @param type $array       Array source
+ * @return type Text from array
+ */
+function text_from_array($delimiter, $indextext, $array)
+{
+    reset($array);
+    $result     = array();
+    $indexarray = explode($delimiter, $indextext);
+    foreach ($indexarray as $itext)
+    {
+        if (array_key_exists($itext, $array))
+        {
+            $result[]   = $array[$itext];
+        }
+    }
+    return implode($delimiter, $result);
+}
+
+/**
  * Create new 1d array from array
  * Example
- * $a = Array ( "0" => Array ( "id" => 1, "code" => 1, "name" => "academic" ), "0" => Array ( "id" => 9, "code" => 2, "name" => "resource" ) );
- * print_r(array_from_array($a, "code", "name"));                       -  output: Array ( [1] => academic [2] => name ) 
+ * $a = Array ( "0" => Array ( "id" => 1, "code" => 1, "name" => "academic" ), "1" => Array ( "id" => 9, "code" => 2, "name" => "resource" ) );
+ * print_r(array_from_array($a, "code", "name"));                       -  output: Array ( [1] => academic [2] => resource ) 
  * @param type $array           source array
  * @param type $indexasindex    index of $array as index in the new array
  * @param type $indexasvalue    value of $array as index in the new array
