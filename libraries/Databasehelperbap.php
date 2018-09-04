@@ -129,9 +129,9 @@ class Databasehelperbap
             foreach ($this->tables->onjoin[$table] as $tablejoin => $field)
             {
                 //only join registered tables, not all
-                if (in_array($this->tables->tablealias[$table], $this->tables->name)) 
+                if (in_array($table, $this->tables->name)) 
                 {
-                    $this->CI->db->where($this->tables->tablealias[$table].".".$field, $this->tables->tablealias[$tablejoin].".".$this->tables->key[$tablejoin]);
+                    $this->CI->db->where($this->tables->tablealias[$table].".".$field."=".((is_array($this->tables->tablealias[$tablejoin]))?$this->tables->tablealias[$tablejoin][0].".".$this->tables->tablealias[$tablejoin][1]:$this->tables->tablealias[$tablejoin].".".$this->tables->key[$tablejoin]));
                 }
             }
         }
