@@ -123,9 +123,9 @@ function select_array_from_values($array, $arrayvalues)
     reset($arrayvalues);
     foreach ($arrayvalues as $value)
     {
-        if (array_key_exists($value, $array)) 
+        if (array_key_exists(trim($value), $array)) 
         {
-            $selectedarray[$value]  = $array[$value];
+            $selectedarray[trim($value)]  = $array[trim($value)];
         }
     }
     return $selectedarray;
