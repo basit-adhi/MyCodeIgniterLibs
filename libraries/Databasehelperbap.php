@@ -25,6 +25,11 @@ class Databasehelperbap
     private $tables;
     /**
      *
+     * @var type array of all tables used in current query
+     */
+    private $current_query_tables;
+    /**
+     *
      * @var CI super-object
      */
     protected $CI;
@@ -129,7 +134,7 @@ class Databasehelperbap
             foreach ($this->tables->onjoin[$table] as $tablejoin => $field)
             {
                 //only join registered tables, not all
-                if (in_array($tablejoin, $this->tables->name)) 
+                if (in_array($tablejoin, $this->current_query_tables)) 
                 {
                     $this->CI->db->where($this->tables->tablealias[$table].".".$field."=".((is_array($this->tables->tablealias[$tablejoin]))?$this->tables->tablealias[$tablejoin][0].".".$this->tables->tablealias[$tablejoin][1]:$this->tables->tablealias[$tablejoin].".".$this->tables->key[$tablejoin]));
                 }
@@ -148,12 +153,12 @@ class Databasehelperbap
     {
         $this->loadSession();
         /* convert select to array */
-        $fromtables     = explode(",", $fromtable);
+        $this->current_query_tables	= explode(",", $fromtable);
         /* generate select and from */
         $this->CI->db->select($select);
-        $this->CI->db->from(implode_2a(",", $fromtables, select_array_from_values($this->tables->tablealias, $fromtables)));
+        $this->CI->db->from(implode_2a(",", $this->current_query_tables, select_array_from_values($this->tables->tablealias, $this->current_query_tables)));
         /* try generate join and partition filter */
-        foreach ($fromtables as $table)
+        foreach ($this->current_query_tables as $table)
         {
             $this->generateJoin($table);
             $this->generatePartitionFilter($table);
