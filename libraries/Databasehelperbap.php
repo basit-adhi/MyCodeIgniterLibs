@@ -56,7 +56,7 @@ class Databasehelperbap
     {
 //Example:
 //        $this->session_ofpartitionfield = array("tahunanggaran" => ifnull($this->CI->session->userdata("idtahunanggaran"), 0));
-	  
+        $this->session_ofpartitionfield = array("isclosing" => ifnull($this->CI->session->userdata("isclosing"), 0));
     }
     
     // --------------------------------------------------------------------
@@ -84,22 +84,55 @@ class Databasehelperbap
         elseif (!array_key_exists($tablename, $this->tables->name))
         {
             //Customize this conditional switch, change to fit your tables definition
+            //     * Add an table structure
+            //     * @param string $tablename     table's name
+            //     * @param string $tablealias    alias of the table
+            //     * @param string $key           primary key of the table (without alias)
+            //     * @param array $onjoin         other table that join in the current table (without alias), 
+            //                                    - format 1: array("other table name" => "field in the current table that join to other table", ...), 
+            //                                    - format 2: array("other table name" => array("field in the current table that join to other table", "field in the other table that join to current table if that field is not a primary key"), ...)
+            //     * @param array $partitionkey   partition key (without alias), 
+            //                                    - format: array("partition key in the table" => "session index", ...)
+            //     addTableStructure($tablename, $tablealias, $key, $onjoin = array(), $partitionkey = array())
 //Example:
 //            switch ($tablename)
 //            {
+//                //sample no join to other table, no partition
 //                case "ueu_tbl_tahunanggaran"    : $this->tables->addTableStructure($tablename, "ta", "idtahunanggaran", array(), array()); break;
+//                //sample no join to other table, partition
 //                case "ueu_tbl_unit"             : $this->tables->addTableStructure($tablename, "tu", "id_unit", array(), array("tahunanggaran" => "tahunanggaran")); break;
+//                //sample join to other table on other table's primary key, partition
 //                case "ueu_tbl_user"             : $this->tables->addTableStructure($tablename, "tus", "idlog", array("ueu_tbl_unit" => "id_unit"), array("tahunanggaran" => "tahunanggaran")); break;
+//                //sample join to other table on selected field in other table, no partition
+//                case "tbl_misi_unit"            : $this->tables->addTableStructure($tablename, "mu", "id", array("ueu_tbl_unit" => array("kodeunit", "kodeunit")), array()); break;
+//                //not found
 //                default: break;
 //            }
             switch ($tablename)
             {
-                case "login_user"               : $this->tables->addTableStructure($tablename, "lu", "iduser", array(), array()); break;
-                case "login_halaman"            : $this->tables->addTableStructure($tablename, "lh", "idhalaman", array(), array()); break;
-                case "login_peran"              : $this->tables->addTableStructure($tablename, "lp", "idperan", array(), array()); break;
-                case "login_hakaksesuser"       : $this->tables->addTableStructure($tablename, "lhau", "idhakaksesuser", array("login_user" => "id_user"), array()); break;
-                case "login_hakakseshalaman"    : $this->tables->addTableStructure($tablename, "lhah", "idhakakseshalaman", array("login_halaman" => "idhalaman"), array()); break;
-                case "login_log"                : $this->tables->addTableStructure($tablename, "ll", "idlog", array(), array()); break;
+                case "demografi_pekerjaan"              : $this->tables->addTableStructure($tablename, "pkj", "idpekerjaan", array(), array()); break;
+                case "demografi_pendidikan"             : $this->tables->addTableStructure($tablename, "pdd", "idpendidikan", array(), array()); break;
+                case "geografi_desakelurahan"           : $this->tables->addTableStructure($tablename, "dk", "iddesakelurahan", array("geografi_kecamatan" => "idkecamatan"), array()); break;
+                case "geografi_kabupatenkota"           : $this->tables->addTableStructure($tablename, "kk", "idkabupatenkota", array("geografi_propinsi" => "idpropinsi"), array()); break;
+                case "geografi_kecamatan"               : $this->tables->addTableStructure($tablename, "kc", "idkecamatan", array("geografi_kabupatenkota" => "idkabupatenkota"), array()); break;
+                case "geografi_propinsi"                : $this->tables->addTableStructure($tablename, "pr", "idpropinsi", array(), array()); break;
+                case "helper_autonumber"                : $this->tables->addTableStructure($tablename, "ha", "", array(), array()); break;
+                case "login_user"                       : $this->tables->addTableStructure($tablename, "lu", "iduser", array(), array()); break;
+                case "login_halaman"                    : $this->tables->addTableStructure($tablename, "lh", "idhalaman", array(), array()); break;
+                case "login_peran"                      : $this->tables->addTableStructure($tablename, "lp", "idperan", array(), array()); break;
+                case "login_hakaksesuser"               : $this->tables->addTableStructure($tablename, "lhau", "idhakaksesuser", array("login_user" => "iduser"), array()); break;
+                case "login_hakakseshalaman"            : $this->tables->addTableStructure($tablename, "lhah", "idhakakseshalaman", array("login_halaman" => "idhalaman"), array()); break;
+                case "login_log"                        : $this->tables->addTableStructure($tablename, "ll", "idlog", array(), array()); break;
+                case "bpjs_bpjs"                        : $this->tables->addTableStructure($tablename, "pbjs", "idbpjs", array("person_pasien" => "norm"), array()); break;
+                case "person_grup_pegawai"              : $this->tables->addTableStructure($tablename, "pgp", "idgruppegawai", array(), array()); break;
+                case "person_hubungan"                  : $this->tables->addTableStructure($tablename, "ph", "idhubungan", array(), array()); break;
+                case "person_pasien"                    : $this->tables->addTableStructure($tablename, "ppas", "norm", array("person_person" => "idperson"), array()); break;
+                case "person_pasien_penanggungjawab"    : $this->tables->addTableStructure($tablename, "pppj", "idpasienpenanggungjawab", array("person_pasien" => "norm", "person_person" => "idperson", "person_hubungan" => "idhubungan"), array()); break;
+                case "person_pegawai"                   : $this->tables->addTableStructure($tablename, "ppg", "idpegawai", array("person_grup_pegawai" => "idgruppegawai", "person_person" => "idperson"), array()); break;
+                case "person_pemeriksaan"               : $this->tables->addTableStructure($tablename, "ppm", "idpemeriksaan", array("person_pasien" => "norm", "person_pasien_penanggungjawab" => "idpasienpenanggungjawab", "rs_unit" => "idunit", "person_dokter" => "iddokter", "rs_statuskeluar" => "idstatuskeluar"), array("isclosing" => "isclosing")); break;
+                case "person_person"                    : $this->tables->addTableStructure($tablename, "pper", "idperson", array("geografi_desakelurahan" => "iddesakelurahan", "demografi_pekerjaan" => "idpekerjaan", "demografi_pendidikan" => "idpendidikan"), array()); break;
+                case "rs_instalasi"                     : $this->tables->addTableStructure($tablename, "ri", "idinstalasi", array("person_pegawai" => "idpegawaika"), array()); break;
+                case "rs_unit"                          : $this->tables->addTableStructure($tablename, "ru", "idunit", array("person_pegawai" => "idpegawaika", "rs_instalasi" => "idinstalasi"), array()); break;
                 default: break;
             }
         }
@@ -153,7 +186,7 @@ class Databasehelperbap
     {
         $this->loadSession();
         /* convert select to array */
-        $this->current_query_tables	= explode(",", $fromtable);
+        $this->current_query_tables = explode_sp($fromtable);
         /* generate select and from */
         $this->CI->db->select($select);
         $this->CI->db->from(implode_2a(",", $this->current_query_tables, select_array_from_values($this->tables->tablealias, $this->current_query_tables)));
@@ -379,7 +412,7 @@ class TableStructure
      * @param string $tablename     table's name
      * @param string $tablealias    alias of the table
      * @param string $key           primary key of the table (without alias)
-     * @param array $onjoin         other table that join in the current table (without alias), format: array("other table name" => "field in the current table that join to other table", ...)
+     * @param array $onjoin         other table that join in the current table (without alias), format 1: array("other table name" => "field in the current table that join to other table", ...), format 2: array("other table name" => array("field in the current table that join to other table", "field in the other table that join to current table if that field is not a primary key"), ...)
      * @param array $partitionkey   partition key (without alias), format: array("partition key in the table" => "session index", ...)
      */
     function addTableStructure($tablename, $tablealias, $key, $onjoin = array(), $partitionkey = array())
@@ -415,7 +448,7 @@ class Mexample extends CI_Model {
     function __construct()
     {
 	parent::__construct();
-        $this->load->library('DatabaseHelperBAP');
+        $this->load->library('Databasehelperbap');
         $this->databasehelperbap->registerTable("ueu_tbl_unit,ueu_tbl_user");
     }
 
