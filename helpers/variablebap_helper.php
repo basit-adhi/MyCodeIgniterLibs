@@ -192,5 +192,5 @@ function array_from_array($array, $indexasindex, $indexasvalue)
  */
 function explode_ns($delimiter, $string, $limit = INT_MAX)
 {
-    return explode($delimiter, str_replace(" ", "", $string), $limit);
+    return explode($delimiter, str_replace($delimiter." ", $delimiter, $string), $limit);
 }
