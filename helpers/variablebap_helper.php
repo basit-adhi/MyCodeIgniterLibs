@@ -145,7 +145,7 @@ function text_from_array($delimiter, $indextext, $array)
 {
     reset($array);
     $result     = array();
-    $indexarray = explode($delimiter, $indextext);
+    $indexarray = explode_ns($delimiter, $indextext);
     foreach ($indexarray as $itext)
     {
         if (array_key_exists($itext, $array))
@@ -181,4 +181,16 @@ function array_from_array($array, $indexasindex, $indexasvalue)
     {
         return array();
     }
+}
+
+/**
+ * Split a string by string, but trim any space (no space)
+ * @param type $delimiter   The boundary string
+ * @param type $string      The input string
+ * @param type $limit       The limit
+ * @return type array from splitting text
+ */
+function explode_ns($delimiter, $string, $limit = INT_MAX)
+{
+    return explode($delimiter, str_replace(" ", "", $string), $limit);
 }
