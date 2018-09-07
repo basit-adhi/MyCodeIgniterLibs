@@ -190,7 +190,7 @@ function array_from_array($array, $indexasindex, $indexasvalue)
  * @param type $limit       The limit
  * @return type array from splitting text
  */
-function explode_ns($delimiter, $string, $limit = INT_MAX)
+function explode_ns($delimiter, $string, $limit = PHP_INT_MAX)
 {
     return explode($delimiter, str_replace($delimiter." ", $delimiter, $string), $limit);
 }
