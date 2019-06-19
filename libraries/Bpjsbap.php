@@ -47,10 +47,10 @@ class Bpjsbap
 
     function createSignature($requestParameter)
     {
-        // Computes the timestamp
+        //menghitung timestamp
         date_default_timezone_set('UTC');
         $tStamp             = strval(time()-strtotime('1970-01-01 00:00:00'));
-        // Computes the signature by hashing the salt with the secret key as the key
+        //menghitung tanda tangan dengan melakukan hash terhadap salt dengan kunci rahasia sebagai kunci
         $signature          = base64_encode(hash_hmac('sha256', $this->Xconsid."&".$tStamp, $this->Xconssecret, true));
  
         if ($this->jenisconsid == JENISCONSID_DEVELOPMENT)
@@ -237,7 +237,7 @@ class Bpjsbap
         $this->idrequest        = BPJS_APLICARE;
         $this->jenisaplikasi    = JENISAPLIKASI_APLICARE;
         $this->jenisconsid      = $jenisconsid;
-        $this->response         = (array) $this->createSignature("/rest/ref/kelas");
+        $this->response         = json_decode(json_encode($this->createSignature("/rest/ref/kelas")), true);
         if ($this->response["metadata"]["code"] == 200 && $this->idrequest == BPJS_APLICARE)
         {
             return  $this->response["list"];
