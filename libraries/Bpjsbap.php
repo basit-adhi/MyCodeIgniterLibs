@@ -45,14 +45,13 @@ class Bpjsbap
     private $jenisconsid;
     private $url;
 
-    function createSignature($requestParameter)
+    function createSignature($requestParameter, $uploadedJSON = '')
     {
         //menghitung timestamp
         date_default_timezone_set('UTC');
         $tStamp             = strval(time()-strtotime('1970-01-01 00:00:00'));
         //menghitung tanda tangan dengan melakukan hash terhadap salt dengan kunci rahasia sebagai kunci
         $signature          = base64_encode(hash_hmac('sha256', $this->Xconsid."&".$tStamp, $this->Xconssecret, true));
- 
         if ($this->jenisconsid == JENISCONSID_DEVELOPMENT)
         {
             $this->url = ($this->jenisaplikasi == JENISAPLIKASI_VCLAIM) ? 'https://dvlp.bpjs-kesehatan.go.id/vclaim-rest' : 'https://dvlp.bpjs-kesehatan.go.id:8888/aplicaresws';
@@ -60,13 +59,21 @@ class Bpjsbap
         else if ($this->jenisconsid == JENISCONSID_PRODUCTION)
         {
             $this->url = ($this->jenisaplikasi == JENISAPLIKASI_VCLAIM) ? 'https://new-api.bpjs-kesehatan.go.id:8080/new-vclaim-rest/' : 'http://api.bpjs-kesehatan.go.id/aplicaresws';
-        }
-        $headers = array(   "Accept: application/json","X-cons-id: ".$this->Xconsid, 
+        }    
+        
+        $headers = array(   "Accept: application/json",
+                            "X-cons-id: ".$this->Xconsid, 
                             "X-timestamp: ".$tStamp, 
                             "X-signature: ".$signature
                         );
         $ch = curl_init($this->url.$requestParameter);
-        echo $this->url.$requestParameter;
+        if ($uploadedJSON != '') 
+        {
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $uploadedJSON);
+            $headers[] = 'Content-Type: application/json';
+        }
+        
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -74,7 +81,7 @@ class Bpjsbap
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $data = curl_exec($ch);
-        if (empty($data))
+        if (empty($data) or $data == "null")
         {
             $data = curl_error($ch);
         }
@@ -259,5 +266,32 @@ class Bpjsbap
         {
             return $this->response["metadata"]["message"];
         }
+    }
+    
+    function updateBed($jenisconsid, $uploadedJSON)
+    {
+        $this->idrequest        = BPJS_APLICARE;
+        $this->jenisaplikasi    = JENISAPLIKASI_APLICARE;
+        $this->jenisconsid      = $jenisconsid;
+        $this->response         = $this->createSignature("/rest/bed/update/".$this->Xkodeppk, $uploadedJSON);
+        return $this->response;
+    }
+    
+    function createBed($jenisconsid, $uploadedJSON)
+    {
+        $this->idrequest        = BPJS_APLICARE;
+        $this->jenisaplikasi    = JENISAPLIKASI_APLICARE;
+        $this->jenisconsid      = $jenisconsid;
+        $this->response         = $this->createSignature("/rest/bed/create/".$this->Xkodeppk, $uploadedJSON);
+        return $this->response;
+    }
+    
+    function deleteBed($jenisconsid, $uploadedJSON)
+    {
+        $this->idrequest        = BPJS_APLICARE;
+        $this->jenisaplikasi    = JENISAPLIKASI_APLICARE;
+        $this->jenisconsid      = $jenisconsid;
+        $this->response         = $this->createSignature("/rest/bed/delete/".$this->Xkodeppk, $uploadedJSON);
+        return $this->response;
     }
 }
