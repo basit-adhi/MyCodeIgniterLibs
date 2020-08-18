@@ -409,7 +409,7 @@ class Bpjsbap
         {
             $rujukan = $this->response->response->rujukan;
             return  $rujukan->poliRujukan->nama." [".$rujukan->diagnosa->kode."] ".$rujukan->diagnosa->nama." - ".$rujukan->keluhan." pada ".$rujukan->tglKunjungan;
-}
+        }
         else
         {
             return array();
