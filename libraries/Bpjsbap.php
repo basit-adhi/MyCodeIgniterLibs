@@ -6,18 +6,21 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 //defined('BPJS_RUJUKAN') OR define('BPJS_RUJUKAN', 2);
 //defined('BPJS_SEP') OR define('BPJS_SEP', 3);
 //defined('BPJS_APLICARE') OR define('BPJS_APLICARE', 4);
+//defined('KMK_SIRANAP') OR define('KMK_SIRANAP', 11);
 //
 //defined('JENISAPLIKASI_VCLAIM') OR define('JENISAPLIKASI_VCLAIM', 1);
 //defined('JENISAPLIKASI_APLICARE') OR define('JENISAPLIKASI_APLICARE', 2);
+//defined('JENISAPLIKASI_SIRANAP') OR define('JENISAPLIKASI_SIRANAP', 11);
 //
 //defined('JENISCONSID_DEVELOPMENT') OR define('JENISCONSID_DEVELOPMENT', 1);
 //defined('JENISCONSID_PRODUCTION') OR define('JENISCONSID_PRODUCTION', 2);
 /**
  * Bpjsbap.php
- * <br />BPJS Class / Indonesian National Health Insurance
+ * <br />BPJS Class / Indonesian National Health Insurance + Kemenkes / Indonesian Health Ministry
  * <br />All documentation will be in Bahasa Indonesia
  * 
  * @author Basit Adhi Prabowo, S.T. <basit@unisayogya.ac.id>
+ * @author Murosadatul Mahmud
  * @access public
  * @link https://github.com/basit-adhi/MyCodeIgniterLibs/blob/master/libraries/Bpjsbap.php
  */
@@ -25,19 +28,19 @@ class Bpjsbap
 {
     /**
      *
-     * @var type merupakan kode consumer (pengakses web-service). Kode ini akan diberikan oleh BPJS Kesehatan
+     * @var type merupakan kode consumer (pengakses web-service). Kode ini akan diberikan oleh BPJS Kesehatan/Kemenkes
      */
-    private $Xconsid = 123456; //masukkan kode yang diberikan oleh BPJS
+    private $Xconsid;
     /**
      *
      * @var type informasi Consumer Secret, hanya disimpan oleh service consumer. Tidak dikirim ke server web-service, hal ini untuk menjaga pengamanan yang lebih baik. Sedangkan kebutuhan Consumer Secret ini adalah untuk men-generate Signature (X-signature).
      */
-    private $Xconssecret = 'aZ12345678'; //masukkan password yang diberikan oleh BPJS
+    private $Xconssecret;
     /**
      *
-     * @var type merupakan kode PPK yang diberikan oleh BPJS Kesehatan
+     * @var type merupakan kode PPK yang diberikan oleh BPJS Kesehatan/Kemenkes
      */
-    private $Xkodeppk    = "00000R0000";
+    private $Xkodeppk;
     private $norujukan  = "";
     private $response;
     private $idrequest;
@@ -45,40 +48,134 @@ class Bpjsbap
     private $jenisconsid;
     private $url;
 
-    function createSignature($requestParameter, $uploadedJSON = '')
+    //katalog VClaim & Aplicare: 
+    //https://dvlp.bpjs-kesehatan.go.id/VClaim-Katalog/
+    //katalog Sisrute:
+    //http://sirs.yankes.kemkes.go.id/sirsservice/start/ts
+    
+    private function upass()
     {
-        //menghitung timestamp
-        date_default_timezone_set('UTC');
-        $tStamp             = strval(time()-strtotime('1970-01-01 00:00:00'));
-        //menghitung tanda tangan dengan melakukan hash terhadap salt dengan kunci rahasia sebagai kunci
-        $signature          = base64_encode(hash_hmac('sha256', $this->Xconsid."&".$tStamp, $this->Xconssecret, true));
+        switch ($this->jenisaplikasi)
+            {
+                case JENISAPLIKASI_VCLAIM:
+                case JENISAPLIKASI_APLICARE:
+                    $this->Xconsid      = 123456;
+                    $this->Xconssecret  = 'aZ12345678';
+                    $this->Xkodeppk     = "00000R0000";
+                    break;
+                case JENISAPLIKASI_SIRANAP:
+                case COVID19:
+                    $this->Xconsid      = 654321;
+                    $this->Xconssecret  = 'zzz123';
+                    break;
+            }   
+    }
+    
+    private function isBPJS()
+    {
+        return $this->jenisaplikasi == JENISAPLIKASI_VCLAIM || $this->jenisaplikasi == JENISAPLIKASI_APLICARE;
+    }
+    
+    private function isKemenkes()
+    {
+    return $this->jenisaplikasi == JENISAPLIKASI_SIRANAP || $this->jenisaplikasi == COVID19;
+    }
+    
+    function createSignature($requestParameter, $uploadedJSON = '', $method = 'POST')
+    {
+        $debug = "";
+        $this->upass();
         if ($this->jenisconsid == JENISCONSID_DEVELOPMENT)
         {
-            $this->url = ($this->jenisaplikasi == JENISAPLIKASI_VCLAIM) ? 'https://dvlp.bpjs-kesehatan.go.id/vclaim-rest' : 'https://dvlp.bpjs-kesehatan.go.id:8888/aplicaresws';
+            switch ($this->jenisaplikasi)
+            {
+                case JENISAPLIKASI_VCLAIM:      $this->url = 'https://dvlp.bpjs-kesehatan.go.id/vclaim-rest'; break;
+                case JENISAPLIKASI_APLICARE:    $this->url = 'https://dvlp.bpjs-kesehatan.go.id:8888/aplicaresws'; break;
+                case COVID19:                   $this->url = 'http://sirs.yankes.kemkes.go.id/fo/index.php'; break;
+                case JENISAPLIKASI_SIRANAP:     $this->url = 'http://sirs.yankes.kemkes.go.id/sirsservice'; break; //cek: http://yankes.kemkes.go.id/app/siranap/pages/rslain, entri: http://yankes.kemkes.go.id/app/siranap-yankes/login
+            }
         }
         else if ($this->jenisconsid == JENISCONSID_PRODUCTION)
         {
-            $this->url = ($this->jenisaplikasi == JENISAPLIKASI_VCLAIM) ? 'https://new-api.bpjs-kesehatan.go.id:8080/new-vclaim-rest/' : 'http://api.bpjs-kesehatan.go.id/aplicaresws';
-        }    
-        
-        $headers = array(   "Accept: application/json",
-                            "X-cons-id: ".$this->Xconsid, 
-                            "X-timestamp: ".$tStamp, 
-                            "X-signature: ".$signature
-                        );
-        $ch = curl_init($this->url.$requestParameter);
-        if ($uploadedJSON != '') 
-        {
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $uploadedJSON);
-            $headers[] = 'Content-Type: application/json';
+            switch ($this->jenisaplikasi)
+            {
+                case JENISAPLIKASI_VCLAIM:      $this->url = 'https://new-api.bpjs-kesehatan.go.id:8080/new-vclaim-rest/'; break;
+                case JENISAPLIKASI_APLICARE:    $this->url = 'http://api.bpjs-kesehatan.go.id/aplicaresws'; break;
+                case COVID19:                   $this->url = 'http://sirs.yankes.kemkes.go.id/fo/index.php'; break;
+                case JENISAPLIKASI_SIRANAP:     $this->url = 'http://sirs.yankes.kemkes.go.id/sirsservice'; break; //cek: http://yankes.kemkes.go.id/app/siranap/pages/rslain, entri: http://yankes.kemkes.go.id/app/siranap-yankes/login
+            }
         }
         
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        //menghitung timestamp
+        date_default_timezone_set('UTC');
+        $tStamp = strval(time()-strtotime('1970-01-01 00:00:00'));
+        if ($this->isBPJS())
+        {
+            //menghitung tanda tangan dengan melakukan hash terhadap salt dengan kunci rahasia sebagai kunci
+            $signature          = base64_encode(hash_hmac('sha256', $this->Xconsid."&".$tStamp, $this->Xconssecret, true));
+            $headers = array(   "Accept: application/json",
+                                "X-cons-id: ".$this->Xconsid, 
+                                "X-timestamp: ".$tStamp, 
+                                "X-signature: ".$signature,
+                                "Content-Type: application/json"
+                            );
+        }
+        else if ($this->isKemenkes())
+        {
+            $headers = array(   "X-rs-id: ".$this->Xconsid,
+                                "X-pass: ".md5($this->Xconssecret),
+                                "Content-Type: application/xml; charset=ISO-8859-1",
+                                "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.15) Gecko/20080623 Firefox/2.0.0.15"
+                            );
+            if ($this->jenisaplikasi == COVID19)
+            {
+                $headers[] = "X-Timestamp: ".$tStamp;
+            }
+        }
+        $debug .= json_encode($headers);
+        
+        $ch = curl_init($this->url.$requestParameter);
+        $debug .= $this->url.$requestParameter;
+        $debug .= $uploadedJSON;
+        if ($this->isBPJS())
+        {
+            if ($uploadedJSON != '') 
+            {
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $uploadedJSON);
+            }
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        }
+        else if ($this->isKemenkes())
+        {
+            if ($uploadedJSON != '') 
+            {
+                if ($this->jenisaplikasi == COVID19)
+                {
+                    if($method!='GET')
+                    {
+                        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);                       
+                    }
+                }
+                else
+                {
+                    curl_setopt($ch, CURLOPT_POST, 1);
+                }
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $uploadedJSON);
+            }
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_NOBODY, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            if ($this->jenisaplikasi != COVID19) 
+            {
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
+            }
+        }
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $data = curl_exec($ch);
         if (empty($data) or $data == "null")
@@ -87,47 +184,127 @@ class Bpjsbap
         }
         curl_close($ch);
         return json_decode($data);
+//        return $debug.$data;
     }
     
     //vclaim
     function requestPropinsi()
     {
-        print_r($this->createSignature("/referensi/propinsi"));
+        $this->idrequest        = BPJS_APLICARE;
+        $this->jenisaplikasi    = JENISAPLIKASI_VCLAIM;
+        $this->jenisconsid      = JENISCONSID_PRODUCTION;
+        $this->response         = json_decode(json_encode($this->createSignature("/referensi/propinsi")), true);
+        if ($this->response["metaData"]["code"] == 200 && $this->idrequest == BPJS_APLICARE)
+        {
+            return  $this->response['response']['list'];
+        }
     }
     
-    function requestPeserta($nobpjs)
+    function requestPeserta($nobpjs,$tglsep)
     {
         $this->idrequest        = BPJS_PESERTA;
         $this->jenisaplikasi    = JENISAPLIKASI_VCLAIM;
-        $this->response         = $this->createSignature("/Peserta/nokartu/$nobpjs/tglSEP/".date('Y-m-d'));
-        $this->norujukan        = "";
+        $this->jenisconsid      = JENISCONSID_DEVELOPMENT;
+        $this->response         = $this->createSignature("/Peserta/nokartu/$nobpjs/tglSEP/".$tglsep);
+        if ($this->response->metaData->code== 200)
+        {
+            return  $this->response->response->peserta;
+        }
+    }
+    
+    function requestPoli()
+    {
+        $namaruang              = ["ivp", "int", "icu", "sar", "mat", "bed", "mat", "tht", "obg", "obs", "ana", "uro", "ort", "gig", "klt", "kul", "kel", "onk", "hem", "reh"];
+        $ruangbpjs              = array();
+        $this->idrequest        = BPJS_PESERTA;
+        $this->jenisaplikasi    = JENISAPLIKASI_VCLAIM;
+        $this->jenisconsid      = JENISCONSID_DEVELOPMENT;
+        foreach ($namaruang as $r)
+        {
+            $this->response         = json_decode(json_encode($this->createSignature("/referensi/poli/".$r)), true);
+            if ($this->response["metaData"]["code"] == 200)
+            {
+                foreach ($this->response['response']['poli'] as $p)
+                {
+                    $ruangbpjs[$p['kode']] = $p['nama'];
+                }
+            }
+        }
+        return $ruangbpjs;
     }
     
     function requestRujukan($norujukan)
     {
         $this->idrequest        = BPJS_RUJUKAN;
         $this->jenisaplikasi    = JENISAPLIKASI_VCLAIM;
+        $this->jenisconsid      = JENISCONSID_PRODUCTION;
         $this->response         = $this->createSignature("/Rujukan/$norujukan");
-        $this->norujukan        = $norujukan;
+        if($this->response->metaData->code == 200)
+        {
+            return $this->response->response;
+        }  
     }
     
+    function requestRujukanSingle($nokartu)
+    {
+        $this->idrequest        = BPJS_RUJUKAN;
+        $this->jenisaplikasi    = JENISAPLIKASI_VCLAIM;
+        $this->jenisconsid      = JENISCONSID_PRODUCTION;
+        $this->response         = $this->createSignature("/Rujukan/Peserta/$nokartu");
+        if($this->response->metaData->code == 200)
+        {
+            return $this->response->response->rujukan;
+        }
+    }
+    
+        
+        function cekrequestRujukanSingle($nokartu)
+    {
+        $this->idrequest        = BPJS_RUJUKAN;
+        $this->jenisaplikasi    = JENISAPLIKASI_VCLAIM;
+        $this->jenisconsid      = JENISCONSID_PRODUCTION;
+        $this->response         = $this->createSignature("/Rujukan/Peserta/$nokartu");
+//        if($this->response->metaData->code == 200)
+//        {
+//            return $this->response->response->rujukan;
+//        }
+        return  $this->response;
+    }
+        
+
     function requestRujukanMulti($nokartu)
     {
         $this->idrequest        = BPJS_RUJUKAN;
         $this->jenisaplikasi    = JENISAPLIKASI_VCLAIM;
+        $this->jenisconsid      = JENISCONSID_PRODUCTION;
         $this->response         = $this->createSignature("/Rujukan/List/Peserta/$nokartu");
-        $this->norujukan        = "";
-        print_r($this->response);
+        if($this->response->metaData->code == 200)
+        {
+            return $this->response->response;
+        }
     }
     
     function requestSEP($nosep)
     {
         $this->idrequest        = BPJS_SEP;
         $this->jenisaplikasi    = JENISAPLIKASI_VCLAIM;
+        $this->jenisconsid      = JENISCONSID_PRODUCTION;
         $this->response         = $this->createSignature("/SEP/$nosep");
         if ($this->response->metaData->code == 200 && $this->idrequest == BPJS_SEP)
         {
-            $this->norujukan    = $this->response->response->noRujukan;
+            return $this->response->response;
+        }
+    }
+
+    function requestDataKunjungan($tglKunjungan,$jnsPelayanan)
+    {
+        $this->idrequest        = BPJS_MONITORING;
+        $this->jenisaplikasi    = JENISAPLIKASI_VCLAIM;
+        $this->jenisconsid      = JENISCONSID_PRODUCTION;
+        $this->response = $this->createSignature("/Monitoring/Kunjungan/Tanggal/$tglKunjungan/JnsPelayanan/$jnsPelayanan");
+        if($this->response->metaData->code== 200)
+        {
+            return $this->response->response;
         }
     }
     
@@ -183,6 +360,7 @@ class Bpjsbap
                     return array();
             }
             return  [   'nik'           => $peserta->nik,
+                        'nokartu'       => $peserta->noKartu,
                         'namaLengkap'   => $peserta->nama,
                         'tglLahir'      => $peserta->tglLahir,
                         'jenisKelamin'  => $peserta->sex,
@@ -245,10 +423,11 @@ class Bpjsbap
         $this->jenisaplikasi    = JENISAPLIKASI_APLICARE;
         $this->jenisconsid      = $jenisconsid;
         $this->response         = json_decode(json_encode($this->createSignature("/rest/ref/kelas")), true);
-        if ($this->response["metadata"]["code"] == 200 && $this->idrequest == BPJS_APLICARE)
+        if ($this->response["metadata"]["code"] == 1 && $this->idrequest == BPJS_APLICARE)
         {
-            return  $this->response["list"];
+            return  $this->response['response']['list'];
         }
+
     }
     
     function requestBedlist($jenisconsid)
@@ -256,15 +435,27 @@ class Bpjsbap
         $this->idrequest        = BPJS_APLICARE;
         $this->jenisaplikasi    = JENISAPLIKASI_APLICARE;
         $this->jenisconsid      = $jenisconsid;
-        $this->response         = json_decode(json_encode($this->createSignature("/rest/bed/read/".$this->Xkodeppk."/1/10000")), true);
-        $code                   = array_key_exists("code", $this->response["metadata"]) ? $this->response["metadata"]["code"] : (array_key_exists("Code", $this->response) ? $this->response["Code"] : 0); 
-        if ($code == 1 && $this->idrequest == BPJS_APLICARE)
+        $this->upass();
+        $this->response         = json_decode(json_encode($this->createSignature("/rest/bed/read/".$this->Xkodeppk."/1/100")), true);
+        if ($this->response == null)
         {
-            return $this->response["response"]["list"];
+            return null;
         }
-        else
+        else if (is_array($this->response))
         {
-            return $this->response["metadata"]["message"];
+            $code                   = array_key_exists("code", $this->response["metadata"]) ? $this->response["metadata"]["code"] : (array_key_exists("Code", $this->response) ? $this->response["Code"] : 0); 
+            if ($code == 1 && $this->idrequest == BPJS_APLICARE)
+            {
+                return $this->response["response"]["list"];
+            }
+            else
+            {
+                return $this->response["metadata"]["message"];
+            }
+        }
+        else 
+        {
+            return $this->response;
         }
     }
     
@@ -273,6 +464,7 @@ class Bpjsbap
         $this->idrequest        = BPJS_APLICARE;
         $this->jenisaplikasi    = JENISAPLIKASI_APLICARE;
         $this->jenisconsid      = $jenisconsid;
+        $this->upass();
         $this->response         = $this->createSignature("/rest/bed/update/".$this->Xkodeppk, $uploadedJSON);
         return $this->response;
     }
@@ -282,6 +474,7 @@ class Bpjsbap
         $this->idrequest        = BPJS_APLICARE;
         $this->jenisaplikasi    = JENISAPLIKASI_APLICARE;
         $this->jenisconsid      = $jenisconsid;
+        $this->upass();
         $this->response         = $this->createSignature("/rest/bed/create/".$this->Xkodeppk, $uploadedJSON);
         return $this->response;
     }
@@ -291,7 +484,70 @@ class Bpjsbap
         $this->idrequest        = BPJS_APLICARE;
         $this->jenisaplikasi    = JENISAPLIKASI_APLICARE;
         $this->jenisconsid      = $jenisconsid;
+        $this->upass();
         $this->response         = $this->createSignature("/rest/bed/delete/".$this->Xkodeppk, $uploadedJSON);
         return $this->response;
     }
+    
+    //sisrute
+    function sisruteXMLfromJson($theJSON, $version = "1.0")
+    {
+        $theXML         = '';
+        $uploadedArray  = json_decode($theJSON);
+        foreach ($uploadedArray as $child)
+        {
+            $xml    = new SimpleXMLElement('<data/>');
+            array_walk_recursive($child, function ($value, $key) use ($xml) { $xml->addChild($key, $value); });
+            $theXML .= $xml->asXML();
+        }
+        return '<?xml version="'.$version.'" encoding="UTF-8"?><xml version="'.$version.'">'.str_ireplace('<>', '', str_ireplace('--', '', str_ireplace('?', '', str_ireplace('xml version="1.0"', '', $theXML)))).'</xml>';
+    }
+    
+    function insertupdatedeleteBedSiranap($jenisconsid, $uploadedJSON)
+    {
+        $this->idrequest        = KMK_SIRANAP;
+        $this->jenisaplikasi    = JENISAPLIKASI_SIRANAP;
+        $this->jenisconsid      = $jenisconsid;
+        $this->response         = $this->createSignature("/ranap", $this->sisruteXMLfromJson($uploadedJSON));
+        return $this->response;
+    }
+    
+    function insertupdatedeletePelayananSiranap($jenisconsid, $jenis, $tanggal, $uploadedJSON)
+    {
+        $this->idrequest        = KMK_SIRANAP;
+        $this->jenisaplikasi    = JENISAPLIKASI_SIRANAP;
+        $this->jenisconsid      = $jenisconsid;
+        $this->response         = $this->createSignature("/".$jenis."/".$tanggal, $this->sisruteXMLfromJson($uploadedJSON));
+        return $this->response;
+    }
+    
+    function settingRequestCovid19($requestParameter,$uploadedJSON,$method)
+    {
+        $this->idrequest        = COVID19;
+        $this->jenisaplikasi    = COVID19;
+        $this->jenisconsid      = JENISCONSID_DEVELOPMENT;
+        $this->response = $this->createSignature($requestParameter, $uploadedJSON,$method);
+        return  $this->response;
+    }
+    
+    function requestGetCovid19($requestParameter,$uploadedJSON='')
+    {
+        return $this->settingRequestCovid19($requestParameter,$uploadedJSON,'GET');
+    }
+    
+    function requestPostCovid19($requestParameter,$uploadedJSON='')
+    {
+        return $this->settingRequestCovid19($requestParameter,$uploadedJSON,'POST');
+    }
+    
+    function requestPutCovid19($requestParameter,$uploadedJSON='')
+    {
+        return $this->settingRequestCovid19($requestParameter,$uploadedJSON,'PUT');
+    }
+    
+    function requestDeleteCovid19($requestParameter,$uploadedJSON='')
+    {
+        return $this->settingRequestCovid19($requestParameter,$uploadedJSON,'DELETE');
+    }
+     
 }
