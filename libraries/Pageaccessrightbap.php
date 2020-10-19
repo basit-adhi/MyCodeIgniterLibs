@@ -49,8 +49,8 @@ class Pageaccessrightbap
             foreach ($userrights as $userright_) 
             {
                 //get all page right on every user right
-                //select $pageid_field from $page_accessright_table where find_in_set('$userright_', $commaseparated_pagerightlist_field)
-                $this->CI->db->where("find_in_set('$userright_', $commaseparated_pagerightlist_field)");
+                //select $pageid_field from $page_accessright_table where find_in_set('$userright_', '$commaseparated_pagerightlist_field')
+                $this->CI->db->where("find_in_set('$userright_', '$commaseparated_pagerightlist_field')");
                 $resultpageright = $this->CI->databasehelperbap->get_selectfrom($pageid_field, $page_accessright_table);
                 if ($resultuserright->result_id->num_rows > 0)
                 {
